@@ -14,7 +14,260 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      drivers: {
+        Row: {
+          created_at: string
+          id: string
+          license_number: string
+          performance_score: number | null
+          total_trips: number | null
+          updated_at: string
+          user_id: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          license_number: string
+          performance_score?: number | null
+          total_trips?: number | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          license_number?: string
+          performance_score?: number | null
+          total_trips?: number | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drivers_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_logs: {
+        Row: {
+          created_at: string
+          driver_id: string | null
+          id: string
+          liters: number
+          odometer_reading: number | null
+          price_per_liter_kes: number
+          route: string | null
+          station_location: string | null
+          total_cost_kes: number | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          liters: number
+          odometer_reading?: number | null
+          price_per_liter_kes: number
+          route?: string | null
+          station_location?: string | null
+          total_cost_kes?: number | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string | null
+          id?: string
+          liters?: number
+          odometer_reading?: number | null
+          price_per_liter_kes?: number
+          route?: string | null
+          station_location?: string | null
+          total_cost_kes?: number | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_logs_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kenyan_routes: {
+        Row: {
+          common_challenges: string[] | null
+          created_at: string
+          distance_km: number
+          end_city: string
+          id: string
+          route_name: string
+          start_city: string
+          typical_duration_hours: number
+        }
+        Insert: {
+          common_challenges?: string[] | null
+          created_at?: string
+          distance_km: number
+          end_city: string
+          id?: string
+          route_name: string
+          start_city: string
+          typical_duration_hours: number
+        }
+        Update: {
+          common_challenges?: string[] | null
+          created_at?: string
+          distance_km?: number
+          end_city?: string
+          id?: string
+          route_name?: string
+          start_city?: string
+          typical_duration_hours?: number
+        }
+        Relationships: []
+      }
+      maintenance_logs: {
+        Row: {
+          cost_kes: number
+          created_at: string
+          date_performed: string
+          description: string | null
+          id: string
+          next_due_date: string | null
+          performed_by: string | null
+          service_type: string
+          vehicle_id: string
+        }
+        Insert: {
+          cost_kes: number
+          created_at?: string
+          date_performed?: string
+          description?: string | null
+          id?: string
+          next_due_date?: string | null
+          performed_by?: string | null
+          service_type: string
+          vehicle_id: string
+        }
+        Update: {
+          cost_kes?: number
+          created_at?: string
+          date_performed?: string
+          description?: string | null
+          id?: string
+          next_due_date?: string | null
+          performed_by?: string | null
+          service_type?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          base_station: string | null
+          created_at: string
+          full_name: string
+          id: string
+          mobile_phone: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          base_station?: string | null
+          created_at?: string
+          full_name: string
+          id: string
+          mobile_phone?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          base_station?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          mobile_phone?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          current_latitude: number | null
+          current_longitude: number | null
+          id: string
+          insurance_expiry: string | null
+          last_location_update: string | null
+          last_service_date: string | null
+          license_plate: string
+          route_assigned: string | null
+          status: string
+          updated_at: string
+          vehicle_type: string
+        }
+        Insert: {
+          created_at?: string
+          current_latitude?: number | null
+          current_longitude?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          last_location_update?: string | null
+          last_service_date?: string | null
+          license_plate: string
+          route_assigned?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_type: string
+        }
+        Update: {
+          created_at?: string
+          current_latitude?: number | null
+          current_longitude?: number | null
+          id?: string
+          insurance_expiry?: string | null
+          last_location_update?: string | null
+          last_service_date?: string | null
+          license_plate?: string
+          route_assigned?: string | null
+          status?: string
+          updated_at?: string
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
