@@ -29,25 +29,36 @@ const Dashboard = () => {
       return;
     }
 
-    const { data: profileData } = await supabase
+    const { data: profileData, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", session.user.id)
-      .single();
+      .maybeSingle();
 
+    if (error) {
+      console.error("Error fetching profile:", error);
+    }
     setProfile(profileData);
   };
 
   const fetchDashboardData = async () => {
     try {
       // Fetch vehicle stats
-      const { data: vehicles } = await supabase
+      const { data: vehicles, error: vehiclesError } = await supabase
         .from("vehicles")
         .select("status");
 
-      const { data: drivers } = await supabase
+      if (vehiclesError) {
+        console.error("Error fetching vehicles:", vehiclesError);
+      }
+
+      const { data: drivers, error: driversError } = await supabase
         .from("drivers")
         .select("id");
+
+      if (driversError) {
+        console.error("Error fetching drivers:", driversError);
+      }
 
       if (vehicles) {
         setStats({
