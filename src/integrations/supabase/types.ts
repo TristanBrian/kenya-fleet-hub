@@ -17,9 +17,12 @@ export type Database = {
       drivers: {
         Row: {
           created_at: string
+          harsh_braking_events: number | null
           id: string
+          idle_time_hours: number | null
           license_number: string
           performance_score: number | null
+          speeding_incidents: number | null
           total_trips: number | null
           updated_at: string
           user_id: string | null
@@ -27,9 +30,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          harsh_braking_events?: number | null
           id?: string
+          idle_time_hours?: number | null
           license_number: string
           performance_score?: number | null
+          speeding_incidents?: number | null
           total_trips?: number | null
           updated_at?: string
           user_id?: string | null
@@ -37,9 +43,12 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          harsh_braking_events?: number | null
           id?: string
+          idle_time_hours?: number | null
           license_number?: string
           performance_score?: number | null
+          speeding_incidents?: number | null
           total_trips?: number | null
           updated_at?: string
           user_id?: string | null
@@ -149,6 +158,57 @@ export type Database = {
         }
         Relationships: []
       }
+      live_locations: {
+        Row: {
+          created_at: string | null
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          speed_kmh: number | null
+          timestamp: string | null
+          trip_id: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          speed_kmh?: number | null
+          timestamp?: string | null
+          trip_id?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string | null
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          speed_kmh?: number | null
+          timestamp?: string | null
+          trip_id?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_locations_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_locations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_logs: {
         Row: {
           cost_kes: number
@@ -223,16 +283,106 @@ export type Database = {
         }
         Relationships: []
       }
+      trips: {
+        Row: {
+          created_at: string | null
+          distance_km: number | null
+          driver_id: string | null
+          end_location: string
+          end_time: string | null
+          estimated_duration_hours: number | null
+          id: string
+          progress_percent: number | null
+          route: string
+          start_location: string
+          start_time: string
+          status: string
+          updated_at: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          distance_km?: number | null
+          driver_id?: string | null
+          end_location: string
+          end_time?: string | null
+          estimated_duration_hours?: number | null
+          id?: string
+          progress_percent?: number | null
+          route: string
+          start_location: string
+          start_time: string
+          status?: string
+          updated_at?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string | null
+          distance_km?: number | null
+          driver_id?: string | null
+          end_location?: string
+          end_time?: string | null
+          estimated_duration_hours?: number | null
+          id?: string
+          progress_percent?: number | null
+          route?: string
+          start_location?: string
+          start_time?: string
+          status?: string
+          updated_at?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           created_at: string
           current_latitude: number | null
           current_longitude: number | null
+          fuel_efficiency_kml: number | null
           id: string
           insurance_expiry: string | null
           last_location_update: string | null
           last_service_date: string | null
           license_plate: string
+          maintenance_status: string | null
+          monthly_fuel_consumption_liters: number | null
           route_assigned: string | null
           status: string
           updated_at: string
@@ -242,11 +392,14 @@ export type Database = {
           created_at?: string
           current_latitude?: number | null
           current_longitude?: number | null
+          fuel_efficiency_kml?: number | null
           id?: string
           insurance_expiry?: string | null
           last_location_update?: string | null
           last_service_date?: string | null
           license_plate: string
+          maintenance_status?: string | null
+          monthly_fuel_consumption_liters?: number | null
           route_assigned?: string | null
           status?: string
           updated_at?: string
@@ -256,11 +409,14 @@ export type Database = {
           created_at?: string
           current_latitude?: number | null
           current_longitude?: number | null
+          fuel_efficiency_kml?: number | null
           id?: string
           insurance_expiry?: string | null
           last_location_update?: string | null
           last_service_date?: string | null
           license_plate?: string
+          maintenance_status?: string | null
+          monthly_fuel_consumption_liters?: number | null
           route_assigned?: string | null
           status?: string
           updated_at?: string
@@ -273,10 +429,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_any_role: {
+        Args: {
+          _roles: Database["public"]["Enums"]["app_role"][]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "fleet_manager" | "operations" | "driver" | "finance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -403,6 +572,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["fleet_manager", "operations", "driver", "finance"],
+    },
   },
 } as const
