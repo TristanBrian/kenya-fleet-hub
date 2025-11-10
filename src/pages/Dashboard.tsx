@@ -137,22 +137,27 @@ const Dashboard = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          Habari {profile?.full_name || 'Manager'}! 👋
+          Karibu, {profile?.full_name || 'Manager'}! 🇰🇪
         </h1>
+        <p className="text-lg text-primary font-medium mb-1">
+          Safiri Smart Fleet - Usafiri Bora, Maisha Bora
+        </p>
         <p className="text-muted-foreground">
-          Here's your fleet overview for today
+          Executive Dashboard - Your fleet overview for today
         </p>
       </div>
 
-      {/* Stats Grid */}
+      {/* Key Metrics - Enhanced */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat, index) => (
-          <Card key={index} className="border-l-4 border-l-primary/50 hover:shadow-md transition-shadow">
+          <Card key={index} className="border-l-4 border-l-primary hover:shadow-lg transition-all hover:-translate-y-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 {stat.title}
               </CardTitle>
-              <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              <div className={`p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5`}>
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{stat.value}</div>
@@ -163,6 +168,103 @@ const Dashboard = () => {
           </Card>
         ))}
       </div>
+
+      {/* Monthly Performance Summary */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-l-4 border-l-success">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Monthly Fuel Cost</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">KES 2,450,000</div>
+            <p className="text-sm text-success flex items-center gap-1 mt-1">
+              <span>↓ KES 380,000 saved</span>
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-info">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Driver Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">78% Average</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Top: Sarah Wanjiku (94%)
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-primary">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Route Efficiency</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">82% On-time</div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Mombasa Route: 85%
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Kenyan Route Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5 text-primary" />
+            Kenyan Route Overview
+          </CardTitle>
+          <CardDescription>Current status across major routes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-semibold">Nairobi-Mombasa</h3>
+                  <p className="text-sm text-muted-foreground">8 vehicles</p>
+                </div>
+                <Badge variant="outline" className="bg-warning/10 text-warning">2 delays</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">85% on-time performance</p>
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-semibold">Thika Super Highway</h3>
+                  <p className="text-sm text-muted-foreground">6 vehicles</p>
+                </div>
+                <Badge variant="outline" className="bg-success/10 text-success">All on time</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">92% on-time performance</p>
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-semibold">Western Circuit</h3>
+                  <p className="text-sm text-muted-foreground">7 vehicles</p>
+                </div>
+                <Badge variant="outline" className="bg-destructive/10 text-destructive">1 breakdown</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">72% on-time performance</p>
+            </div>
+
+            <div className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-semibold">Northern Route</h3>
+                  <p className="text-sm text-muted-foreground">3 vehicles</p>
+                </div>
+                <Badge variant="outline" className="bg-warning/10 text-warning">Maintenance due</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">68% on-time performance</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Alerts Section */}
       <div>
@@ -178,6 +280,16 @@ const Dashboard = () => {
               <AlertDescription>{alert.description}</AlertDescription>
             </Alert>
           ))}
+          <Alert className="border-l-4 border-l-info">
+            <MapPin className="h-4 w-4" />
+            <AlertTitle>M-Pesa Integration Update</AlertTitle>
+            <AlertDescription>92% of payments now digital. Excellent adoption rate across the fleet.</AlertDescription>
+          </Alert>
+          <Alert className="border-l-4 border-l-primary">
+            <TrendingUp className="h-4 w-4" />
+            <AlertTitle>Fuel Price Update</AlertTitle>
+            <AlertDescription>Current diesel price: KES 185/L in Nairobi. Consider bulk purchasing opportunities.</AlertDescription>
+          </Alert>
         </div>
       </div>
 
@@ -209,12 +321,28 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">Driver performance</p>
             </button>
             <button
+              onClick={() => navigate("/live-tracking")}
+              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors text-left"
+            >
+              <MapPin className="h-6 w-6 text-success mb-2" />
+              <h3 className="font-semibold">Live Tracking</h3>
+              <p className="text-sm text-muted-foreground">Real-time GPS monitoring</p>
+            </button>
+            <button
               onClick={() => navigate("/maintenance")}
               className="p-4 border rounded-lg hover:bg-muted/50 transition-colors text-left"
             >
               <Wrench className="h-6 w-6 text-warning mb-2" />
               <h3 className="font-semibold">Maintenance</h3>
               <p className="text-sm text-muted-foreground">Service schedules</p>
+            </button>
+            <button
+              onClick={() => navigate("/analytics")}
+              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors text-left"
+            >
+              <TrendingUp className="h-6 w-6 text-info mb-2" />
+              <h3 className="font-semibold">Analytics</h3>
+              <p className="text-sm text-muted-foreground">Financial reports</p>
             </button>
           </div>
         </CardContent>

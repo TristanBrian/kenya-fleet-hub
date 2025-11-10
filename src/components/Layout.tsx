@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Truck, LayoutDashboard, Map, Users, Wrench, LogOut, Menu, X } from "lucide-react";
+import { Truck, LayoutDashboard, Map, Users, Wrench, LogOut, Menu, X, MapPin, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LayoutProps {
@@ -42,9 +42,11 @@ const Layout = ({ children }: LayoutProps) => {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Live Tracking", path: "/live-tracking", icon: MapPin },
     { name: "Vehicles", path: "/vehicles", icon: Map },
     { name: "Drivers", path: "/drivers", icon: Users },
     { name: "Maintenance", path: "/maintenance", icon: Wrench },
+    { name: "Analytics", path: "/analytics", icon: BarChart3 },
   ];
 
   const isActive = (path: string) => location.pathname === path;

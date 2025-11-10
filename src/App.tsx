@@ -8,6 +8,8 @@ import Dashboard from "./pages/Dashboard";
 import Vehicles from "./pages/Vehicles";
 import Drivers from "./pages/Drivers";
 import Maintenance from "./pages/Maintenance";
+import LiveTracking from "./pages/LiveTracking";
+import Analytics from "./pages/Analytics";
 import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/vehicles" element={<Layout><Vehicles /></Layout>} />
           <Route path="/drivers" element={<Layout><Drivers /></Layout>} />
           <Route path="/maintenance" element={<Layout><Maintenance /></Layout>} />
+          <Route path="/live-tracking" element={<Layout><LiveTracking /></Layout>} />
+          <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
