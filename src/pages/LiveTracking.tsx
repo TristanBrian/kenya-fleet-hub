@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Truck, Clock, Navigation, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import KenyaFleetMap from "@/components/KenyaFleetMap";
 
 interface Vehicle {
   id: string;
@@ -124,31 +125,17 @@ const LiveTracking = () => {
         </CardContent>
       </Card>
 
-      {/* Map Placeholder */}
+      {/* Interactive Map */}
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-primary" />
             Kenya Fleet Map
           </CardTitle>
-          <CardDescription>Interactive map showing all active vehicles</CardDescription>
+          <CardDescription>Interactive map showing all active vehicles in real-time</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 h-[500px] flex items-center justify-center border-t">
-            <div className="text-center space-y-4 p-8">
-              <MapPin className="h-16 w-16 text-primary/60 mx-auto" />
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Google Maps Integration Ready</h3>
-                <p className="text-muted-foreground max-w-md mx-auto">
-                  Add your Google Maps API key to enable live map visualization with vehicle markers,
-                  route tracing, and real-time position updates across Kenya.
-                </p>
-              </div>
-              <Badge variant="outline" className="mt-4">
-                Map API Configuration Required
-              </Badge>
-            </div>
-          </div>
+          <KenyaFleetMap vehicles={vehicles} />
         </CardContent>
       </Card>
 
