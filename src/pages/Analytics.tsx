@@ -44,6 +44,33 @@ const Analytics = () => {
         fuelConsumption: fuelLiters,
         vehicleCount: vehicles?.length || 0,
       });
+
+      // Set up real-time subscriptions
+      const channel = supabase
+        .channel('analytics-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'maintenance_logs'
+          },
+          () => fetchAnalytics()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'fuel_logs'
+          },
+          () => fetchAnalytics()
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } catch (error) {
       console.error("Error fetching analytics:", error);
     } finally {

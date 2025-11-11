@@ -68,6 +68,37 @@ const Dashboard = () => {
           totalDrivers: drivers?.length || 0,
         });
       }
+
+      // Set up real-time subscription for dashboard updates
+      const channel = supabase
+        .channel('dashboard-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'vehicles'
+          },
+          () => {
+            fetchDashboardData();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'drivers'
+          },
+          () => {
+            fetchDashboardData();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {

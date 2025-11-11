@@ -21,12 +21,31 @@ const LiveTracking = () => {
   useEffect(() => {
     fetchVehicles();
     
-    // Simulate live updates every 30 seconds
+    // Set up real-time subscription for live location updates
+    const channel = supabase
+      .channel('live-locations-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vehicles'
+        },
+        () => {
+          fetchVehicles();
+        }
+      )
+      .subscribe();
+
+    // Also refresh every 30 seconds
     const interval = setInterval(() => {
       fetchVehicles();
     }, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchVehicles = async () => {
