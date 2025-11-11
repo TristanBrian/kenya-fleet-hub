@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Truck } from "lucide-react";
+import { Loader2, Truck, Users, UserCircle, DollarSign, Settings } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -98,6 +100,70 @@ const Auth = () => {
     }
   };
 
+  const handleQuickLogin = async (testEmail: string, testPassword: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: testEmail,
+        password: testPassword,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Test account login successful!",
+        description: "Welcome to Safiri Smart Fleet demo.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Quick login failed",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const testAccounts = [
+    {
+      icon: Settings,
+      role: "Fleet Manager",
+      email: "manager@safirismart.co.ke",
+      password: "Manager2024!",
+      description: "Full access to all dashboards and features",
+      color: "text-primary",
+      bgColor: "bg-primary/10"
+    },
+    {
+      icon: Users,
+      role: "Operations Team",
+      email: "operations@safirismart.co.ke",
+      password: "Ops2024!",
+      description: "Vehicle and driver management access",
+      color: "text-info",
+      bgColor: "bg-info/10"
+    },
+    {
+      icon: UserCircle,
+      role: "Driver",
+      email: "john.kamau@safirismart.co.ke",
+      password: "Driver2024!",
+      description: "Limited view of assigned vehicle and trips",
+      color: "text-success",
+      bgColor: "bg-success/10"
+    },
+    {
+      icon: DollarSign,
+      role: "Finance Team",
+      email: "finance@safirismart.co.ke",
+      password: "Finance2024!",
+      description: "Analytics and financial reports only",
+      color: "text-warning",
+      bgColor: "bg-warning/10"
+    }
+  ];
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
       <Card className="w-full max-w-md shadow-xl border-primary/10">
@@ -113,11 +179,56 @@ const Auth = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+          <Tabs defaultValue="test" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="test">Test Accounts</TabsTrigger>
               <TabsTrigger value="signin">Sign In</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="test" className="space-y-4">
+              <Alert className="border-primary/20 bg-primary/5">
+                <Truck className="h-4 w-4" />
+                <AlertTitle>Quick Demo Access</AlertTitle>
+                <AlertDescription>
+                  Select a test account below to instantly explore different dashboard views
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                {testAccounts.map((account, index) => (
+                  <Card key={index} className="hover:shadow-md transition-all cursor-pointer border-l-4 border-l-primary/20 hover:border-l-primary">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 flex-1">
+                          <div className={`p-2 rounded-lg ${account.bgColor}`}>
+                            <account.icon className={`h-5 w-5 ${account.color}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-sm">{account.role}</h3>
+                              <Badge variant="outline" className="text-xs">Demo</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">{account.description}</p>
+                            <div className="text-xs space-y-1">
+                              <p className="font-mono text-muted-foreground">{account.email}</p>
+                              <p className="font-mono text-muted-foreground">{account.password}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="sm"
+                          onClick={() => handleQuickLogin(account.email, account.password)}
+                          disabled={loading}
+                        >
+                          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
