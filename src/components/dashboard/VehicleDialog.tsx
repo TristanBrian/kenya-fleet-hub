@@ -123,12 +123,15 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
 
           <div>
             <Label>Route Assigned</Label>
-            <Select value={formData.route_assigned} onValueChange={(v) => setFormData({ ...formData, route_assigned: v })}>
+            <Select 
+              value={formData.route_assigned || "none"} 
+              onValueChange={(v) => setFormData({ ...formData, route_assigned: v === "none" ? "" : v })}
+            >
               <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Select route" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {routes.map((route) => (
                   <SelectItem key={route.id} value={route.name}>
                     {route.name}
