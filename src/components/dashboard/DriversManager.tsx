@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, User } from "lucide-react";
+import { Plus, User, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { DriverDialog } from "./DriverDialog";
 
 interface Driver {
   id: string;
@@ -19,6 +20,8 @@ interface Driver {
 export const DriversManager = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -53,6 +56,10 @@ export const DriversManager = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Drivers</h2>
+        <Button onClick={() => { setSelectedDriver(null); setDialogOpen(true); }}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Driver
+        </Button>
       </div>
 
       <Card>
@@ -68,6 +75,7 @@ export const DriversManager = () => {
                 <TableHead>Phone</TableHead>
                 <TableHead>Performance</TableHead>
                 <TableHead>Total Trips</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,6 +93,11 @@ export const DriversManager = () => {
                     </div>
                   </TableCell>
                   <TableCell>{driver.total_trips}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="ghost" onClick={() => { setSelectedDriver(driver); setDialogOpen(true); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {drivers.length === 0 && (
@@ -98,6 +111,13 @@ export const DriversManager = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <DriverDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        driver={selectedDriver}
+        onSuccess={fetchDrivers}
+      />
     </div>
   );
 };
