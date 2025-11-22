@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("Starting test account seeding...");
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -86,6 +87,20 @@ Deno.serve(async (req) => {
 
       if (!authUser.user) {
         results.push({ email: account.email, status: "error", error: "User creation failed" });
+        continue;
+      }
+
+      // Create profile
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .insert({
+          id: authUser.user.id,
+          full_name: account.full_name,
+          role: account.role
+        });
+
+      if (profileError) {
+        results.push({ email: account.email, status: "error", error: profileError.message });
         continue;
       }
 

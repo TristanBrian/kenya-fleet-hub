@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Truck, Users, UserCircle, DollarSign, Settings } from "lucide-react";
+import { Loader2, Truck, Users, UserCircle, DollarSign, Settings, Database } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
 const Auth = () => {
   const [loading, setLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -97,6 +98,35 @@ const Auth = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeedAccounts = async () => {
+    setSeeding(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/seed-test-accounts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.error || 'Failed to seed accounts');
+
+      toast({
+        title: "Test accounts created!",
+        description: "All test accounts are now ready to use.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Seeding failed",
+        description: error.message,
+      });
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -194,6 +224,25 @@ const Auth = () => {
                   Select a test account below to instantly explore different dashboard views
                 </AlertDescription>
               </Alert>
+
+              <Button 
+                onClick={handleSeedAccounts} 
+                disabled={seeding}
+                className="w-full mb-3"
+                variant="outline"
+              >
+                {seeding ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating test accounts...
+                  </>
+                ) : (
+                  <>
+                    <Database className="mr-2 h-4 w-4" />
+                    Create All Test Accounts
+                  </>
+                )}
+              </Button>
 
               <div className="space-y-3">
                 {testAccounts.map((account, index) => (
