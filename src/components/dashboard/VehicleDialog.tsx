@@ -22,7 +22,14 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
     status: "active",
     fuel_efficiency_kml: "",
   });
+  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<any[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchVehicleTypes();
+    fetchRoutes();
+  }, []);
 
   useEffect(() => {
     if (vehicle) {
@@ -43,6 +50,22 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
       });
     }
   }, [vehicle]);
+
+  const fetchVehicleTypes = async () => {
+    const { data } = await supabase
+      .from("vehicle_types")
+      .select("*")
+      .order("name");
+    setVehicleTypes(data || []);
+  };
+
+  const fetchRoutes = async () => {
+    const { data } = await supabase
+      .from("routes_master")
+      .select("*")
+      .order("name");
+    setRoutes(data || []);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,41 +96,62 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>License Plate</Label>
+            <Label>License Plate *</Label>
             <Input
               value={formData.license_plate}
               onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
+              placeholder="KXX 123A"
               required
             />
           </div>
+          
           <div>
-            <Label>Vehicle Type</Label>
-            <Input
-              value={formData.vehicle_type}
-              onChange={(e) => setFormData({ ...formData, vehicle_type: e.target.value })}
-              required
-            />
+            <Label>Vehicle Type *</Label>
+            <Select value={formData.vehicle_type} onValueChange={(v) => setFormData({ ...formData, vehicle_type: v })} required>
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder="Select vehicle type" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {vehicleTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.name}>
+                    {type.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
           <div>
             <Label>Route Assigned</Label>
-            <Input
-              value={formData.route_assigned}
-              onChange={(e) => setFormData({ ...formData, route_assigned: e.target.value })}
-            />
+            <Select value={formData.route_assigned} onValueChange={(v) => setFormData({ ...formData, route_assigned: v })}>
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder="Select route" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="">None</SelectItem>
+                {routes.map((route) => (
+                  <SelectItem key={route.id} value={route.name}>
+                    {route.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+
           <div>
-            <Label>Status</Label>
+            <Label>Status *</Label>
             <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover z-50">
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
           <div>
             <Label>Fuel Efficiency (km/L)</Label>
             <Input
@@ -115,8 +159,10 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
               step="0.1"
               value={formData.fuel_efficiency_kml}
               onChange={(e) => setFormData({ ...formData, fuel_efficiency_kml: e.target.value })}
+              placeholder="6.2"
             />
           </div>
+
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit">Save</Button>
