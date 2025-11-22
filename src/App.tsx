@@ -10,6 +10,7 @@ import Drivers from "./pages/Drivers";
 import Maintenance from "./pages/Maintenance";
 import LiveTracking from "./pages/LiveTracking";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/maintenance" element={<Layout><Maintenance /></Layout>} />
           <Route path="/live-tracking" element={<Layout><LiveTracking /></Layout>} />
           <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

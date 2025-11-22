@@ -283,6 +283,36 @@ export type Database = {
         }
         Relationships: []
       }
+      routes_master: {
+        Row: {
+          created_at: string | null
+          distance_km: number | null
+          end_location: string
+          id: string
+          name: string
+          start_location: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          distance_km?: number | null
+          end_location: string
+          id?: string
+          name: string
+          start_location: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          distance_km?: number | null
+          end_location?: string
+          id?: string
+          name?: string
+          start_location?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       trips: {
         Row: {
           created_at: string | null
@@ -367,6 +397,30 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

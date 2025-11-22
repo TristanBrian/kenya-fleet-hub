@@ -1,4 +1,4 @@
-import { Home, Truck, Users, MapPin, Wrench, BarChart3, LogOut } from "lucide-react";
+import { Home, Truck, Users, MapPin, Wrench, BarChart3, Settings, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ const navItems = [
   { title: "Live Tracking", url: "/live-tracking", icon: MapPin },
   { title: "Maintenance", url: "/maintenance", icon: Wrench },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
