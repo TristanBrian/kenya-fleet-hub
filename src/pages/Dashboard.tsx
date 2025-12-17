@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Truck } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
+import { DriverDashboard } from "@/components/dashboard/DriverDashboard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -20,16 +22,23 @@ const Dashboard = () => {
       return;
     }
 
-    const { data: profileData, error } = await supabase
+    // Fetch profile
+    const { data: profileData } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", session.user.id)
       .maybeSingle();
 
-    if (error) {
-      console.error("Error fetching profile:", error);
-    }
     setProfile(profileData);
+
+    // Fetch user role from user_roles table
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    setUserRole(roleData?.role || null);
     setLoading(false);
   };
 
@@ -44,18 +53,23 @@ const Dashboard = () => {
     );
   }
 
+  // Check if user is a driver
+  const isDriver = userRole === "driver";
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-1">
-          Fleet Manager Dashboard
+          {isDriver ? `Welcome, ${profile?.full_name || "Driver"}` : "Fleet Manager Dashboard"}
         </h1>
         <p className="text-muted-foreground">
-          Complete overview of your fleet operations
+          {isDriver 
+            ? "Your trips, vehicle, and performance overview" 
+            : "Complete overview of your fleet operations"}
         </p>
       </div>
 
-      <DashboardOverview />
+      {isDriver ? <DriverDashboard profile={profile} /> : <DashboardOverview />}
     </div>
   );
 };
