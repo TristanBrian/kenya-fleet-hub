@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, Settings } from "lucide-react";
+import { Plus, Trash2, Settings, Link2, CheckCircle, XCircle, Map, Cloud, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const SettingsManager = () => {
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
@@ -15,6 +16,14 @@ export const SettingsManager = () => {
   const [newVehicleType, setNewVehicleType] = useState({ name: "", description: "" });
   const [newRoute, setNewRoute] = useState({ name: "", start_location: "", end_location: "", distance_km: "" });
   const { toast } = useToast();
+
+  // API connection status (mock for demo)
+  const [apiStatus] = useState({
+    mapbox: { connected: true, name: "Mapbox", description: "Real-time GPS tracking and maps" },
+    database: { connected: true, name: "Lovable Cloud", description: "Database and authentication" },
+    weather: { connected: false, name: "Weather API", description: "Route weather conditions" },
+    fuel: { connected: false, name: "Fuel Price API", description: "Live fuel prices in Kenya" },
+  });
 
   useEffect(() => {
     fetchData();
@@ -35,7 +44,7 @@ export const SettingsManager = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: "Vehicle type added" });
+      toast({ title: "Mafanikio!", description: "Vehicle type added" });
       setNewVehicleType({ name: "", description: "" });
       fetchData();
     }
@@ -47,7 +56,7 @@ export const SettingsManager = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: "Vehicle type deleted" });
+      toast({ title: "Mafanikio!", description: "Vehicle type deleted" });
       fetchData();
     }
   };
@@ -62,7 +71,7 @@ export const SettingsManager = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: "Route added" });
+      toast({ title: "Mafanikio!", description: "Route added" });
       setNewRoute({ name: "", start_location: "", end_location: "", distance_km: "" });
       fetchData();
     }
@@ -74,7 +83,7 @@ export const SettingsManager = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: "Route deleted" });
+      toast({ title: "Mafanikio!", description: "Route deleted" });
       fetchData();
     }
   };
@@ -86,142 +95,220 @@ export const SettingsManager = () => {
         <h2 className="text-2xl font-bold">Fleet Settings</h2>
       </div>
 
-      {/* Vehicle Types Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Vehicle Types</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={addVehicleType} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-            <div>
-              <Label>Type Name *</Label>
-              <Input
-                value={newVehicleType.name}
-                onChange={(e) => setNewVehicleType({ ...newVehicleType, name: e.target.value })}
-                placeholder="e.g., Truck - 15 Ton"
-                required
-              />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Input
-                value={newVehicleType.description}
-                onChange={(e) => setNewVehicleType({ ...newVehicleType, description: e.target.value })}
-                placeholder="Optional description"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Type
-              </Button>
-            </div>
-          </form>
+      <Tabs defaultValue="integrations" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="integrations">
+            <Link2 className="h-4 w-4 mr-2" />
+            API Integrations
+          </TabsTrigger>
+          <TabsTrigger value="vehicles">Vehicle Types</TabsTrigger>
+          <TabsTrigger value="routes">Routes</TabsTrigger>
+        </TabsList>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Type Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {vehicleTypes.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell className="font-medium">{type.name}</TableCell>
-                  <TableCell>{type.description || "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => deleteVehicleType(type.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        {/* API Integrations Tab */}
+        <TabsContent value="integrations">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cloud className="h-5 w-5" />
+                Connected Services
+              </CardTitle>
+              <CardDescription>
+                Manage API connections for analytics and real-time data
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                {Object.entries(apiStatus).map(([key, api]) => (
+                  <Card key={key} className={`border-l-4 ${api.connected ? "border-l-success" : "border-l-muted"}`}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            {key === "mapbox" && <Map className="h-4 w-4 text-primary" />}
+                            {key === "database" && <Database className="h-4 w-4 text-primary" />}
+                            {key === "weather" && <Cloud className="h-4 w-4 text-muted-foreground" />}
+                            {key === "fuel" && <Settings className="h-4 w-4 text-muted-foreground" />}
+                            <span className="font-semibold">{api.name}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{api.description}</p>
+                        </div>
+                        <Badge variant={api.connected ? "default" : "secondary"} className="flex items-center gap-1">
+                          {api.connected ? (
+                            <><CheckCircle className="h-3 w-3" /> Connected</>
+                          ) : (
+                            <><XCircle className="h-3 w-3" /> Not Connected</>
+                          )}
+                        </Badge>
+                      </div>
+                      {!api.connected && (
+                        <Button size="sm" variant="outline" className="mt-3 w-full" onClick={() => toast({ title: "Coming Soon", description: "API integration will be available in future updates" })}>
+                          Connect API
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-      {/* Routes Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Routes</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form onSubmit={addRoute} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-muted/50 rounded-lg">
-            <div>
-              <Label>Route Name *</Label>
-              <Input
-                value={newRoute.name}
-                onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
-                placeholder="e.g., Nairobi-Mombasa"
-                required
-              />
-            </div>
-            <div>
-              <Label>Start Location *</Label>
-              <Input
-                value={newRoute.start_location}
-                onChange={(e) => setNewRoute({ ...newRoute, start_location: e.target.value })}
-                placeholder="e.g., Nairobi"
-                required
-              />
-            </div>
-            <div>
-              <Label>End Location *</Label>
-              <Input
-                value={newRoute.end_location}
-                onChange={(e) => setNewRoute({ ...newRoute, end_location: e.target.value })}
-                placeholder="e.g., Mombasa"
-                required
-              />
-            </div>
-            <div>
-              <Label>Distance (km)</Label>
-              <Input
-                type="number"
-                value={newRoute.distance_km}
-                onChange={(e) => setNewRoute({ ...newRoute, distance_km: e.target.value })}
-                placeholder="480"
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Route
-              </Button>
-            </div>
-          </form>
+              <div className="p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-semibold mb-2">Analytics Data Sources</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Analytics dashboards currently pull data from your connected Lovable Cloud database including:
+                </p>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• <strong>Vehicles:</strong> Fleet status, locations, maintenance schedules</li>
+                  <li>• <strong>Trips:</strong> Route performance, on-time delivery rates</li>
+                  <li>• <strong>Fuel Logs:</strong> Consumption tracking, cost analysis</li>
+                  <li>• <strong>Maintenance Logs:</strong> Service history, cost breakdowns</li>
+                  <li>• <strong>Drivers:</strong> Performance scores, behavior metrics</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Route Name</TableHead>
-                <TableHead>From</TableHead>
-                <TableHead>To</TableHead>
-                <TableHead>Distance</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {routes.map((route) => (
-                <TableRow key={route.id}>
-                  <TableCell className="font-medium">{route.name}</TableCell>
-                  <TableCell>{route.start_location}</TableCell>
-                  <TableCell>{route.end_location}</TableCell>
-                  <TableCell>{route.distance_km ? `${route.distance_km} km` : "-"}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="ghost" onClick={() => deleteRoute(route.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+        {/* Vehicle Types Tab */}
+        <TabsContent value="vehicles">
+          <Card>
+            <CardHeader>
+              <CardTitle>Vehicle Types</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={addVehicleType} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <Label>Type Name *</Label>
+                  <Input
+                    value={newVehicleType.name}
+                    onChange={(e) => setNewVehicleType({ ...newVehicleType, name: e.target.value })}
+                    placeholder="e.g., Truck - 15 Ton"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Input
+                    value={newVehicleType.description}
+                    onChange={(e) => setNewVehicleType({ ...newVehicleType, description: e.target.value })}
+                    placeholder="Optional description"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Type
+                  </Button>
+                </div>
+              </form>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vehicleTypes.map((type) => (
+                    <TableRow key={type.id}>
+                      <TableCell className="font-medium">{type.name}</TableCell>
+                      <TableCell>{type.description || "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" onClick={() => deleteVehicleType(type.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Routes Tab */}
+        <TabsContent value="routes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Routes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={addRoute} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div>
+                  <Label>Route Name *</Label>
+                  <Input
+                    value={newRoute.name}
+                    onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
+                    placeholder="e.g., Nairobi-Mombasa"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Start Location *</Label>
+                  <Input
+                    value={newRoute.start_location}
+                    onChange={(e) => setNewRoute({ ...newRoute, start_location: e.target.value })}
+                    placeholder="e.g., Nairobi"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>End Location *</Label>
+                  <Input
+                    value={newRoute.end_location}
+                    onChange={(e) => setNewRoute({ ...newRoute, end_location: e.target.value })}
+                    placeholder="e.g., Mombasa"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Distance (km)</Label>
+                  <Input
+                    type="number"
+                    value={newRoute.distance_km}
+                    onChange={(e) => setNewRoute({ ...newRoute, distance_km: e.target.value })}
+                    placeholder="480"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Route
+                  </Button>
+                </div>
+              </form>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Route Name</TableHead>
+                    <TableHead>From</TableHead>
+                    <TableHead>To</TableHead>
+                    <TableHead>Distance</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {routes.map((route) => (
+                    <TableRow key={route.id}>
+                      <TableCell className="font-medium">{route.name}</TableCell>
+                      <TableCell>{route.start_location}</TableCell>
+                      <TableCell>{route.end_location}</TableCell>
+                      <TableCell>{route.distance_km ? `${route.distance_km} km` : "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost" onClick={() => deleteRoute(route.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

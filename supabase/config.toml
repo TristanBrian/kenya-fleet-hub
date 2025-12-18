@@ -2,3 +2,9 @@ project_id = "arnlhxyjfiwrxmbmnsbv"
 
 [functions.seed-test-accounts]
 verify_jwt = false
+
+[functions.create-driver]
+verify_jwt = true
+
+[functions.generate-live-locations]
+verify_jwt = false
