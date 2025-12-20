@@ -229,12 +229,12 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
               <Label className="flex items-center gap-2">
                 <Car className="h-4 w-4" /> Assign Vehicle
               </Label>
-              <Select value={formData.vehicle_id} onValueChange={(v) => setFormData({ ...formData, vehicle_id: v })}>
+              <Select value={formData.vehicle_id || "none"} onValueChange={(v) => setFormData({ ...formData, vehicle_id: v === "none" ? "" : v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select vehicle (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No vehicle assigned</SelectItem>
+                  <SelectItem value="none">No vehicle assigned</SelectItem>
                   {vehicles.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
                       {v.license_plate} - {v.vehicle_type}
