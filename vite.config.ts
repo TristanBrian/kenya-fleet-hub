@@ -22,13 +22,25 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
     resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
+      alias: [
+        // Override the generated client import to avoid blank-screens when only
+        // VITE_SUPABASE_PUBLISHABLE_KEY is available.
+        {
+          find: /^@\/integrations\/supabase\/client$/,
+          replacement: path.resolve(
+            __dirname,
+            "./src/integrations/supabase/client-compat.ts"
+          ),
+        },
+        {
+          find: "@",
+          replacement: path.resolve(__dirname, "./src"),
+        },
+      ],
     },
     define: {
-      // Ensure the generated client (which expects VITE_SUPABASE_ANON_KEY) works
-      // even if only VITE_SUPABASE_PUBLISHABLE_KEY was configured.
+      // Ensure any direct reads still work in environments that only provide
+      // VITE_SUPABASE_PUBLISHABLE_KEY.
       "import.meta.env.VITE_SUPABASE_ANON_KEY": JSON.stringify(anonKey),
     },
   };
