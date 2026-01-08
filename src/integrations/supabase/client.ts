@@ -6,7 +6,38 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  console.error('Missing Supabase environment variables.');
+  console.error('VITE_SUPABASE_URL:', SUPABASE_URL ? 'Set' : 'Missing');
+  console.error('VITE_SUPABASE_ANON_KEY:', SUPABASE_ANON_KEY ? 'Set' : 'Missing');
+  console.error('Please configure environment variables in Netlify Dashboard:');
+  console.error('Site Settings → Environment Variables → Add variable');
+  console.error('Required: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
+  
+  // Show user-friendly error instead of crashing
+  if (typeof window !== 'undefined') {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #ef4444;
+      color: white;
+      padding: 1rem;
+      z-index: 9999;
+      text-align: center;
+      font-family: system-ui, -apple-system, sans-serif;
+    `;
+    errorDiv.innerHTML = `
+      <strong>Configuration Error:</strong> Missing Supabase environment variables. 
+      Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Netlify Dashboard.
+      <br>
+      <small>Check NETLIFY_SETUP.md for instructions</small>
+    `;
+    document.body.appendChild(errorDiv);
+  }
+  
+  throw new Error('Missing Supabase environment variables. Please check your .env file or Netlify Dashboard.');
 }
 
 // Import the supabase client like this:

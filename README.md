@@ -526,15 +526,22 @@ We welcome contributions to improve the FMCS system! Please follow these guideli
 
 For questions, issues, or support:
 
-1. Check the [SETUP_GUIDE.md](SETUP_GUIDE.md) for common solutions
-2. Review [TEST_CREDENTIALS.md](TEST_CREDENTIALS.md) for account setup
-3. See [DATA_SETUP_GUIDE.md](DATA_SETUP_GUIDE.md) for data seeding instructions
-4. See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment instructions
-5. Review [PROJECT_CHECKLIST.md](PROJECT_CHECKLIST.md) for project readiness
-6. Check [JUDGES_PRESENTATION.md](JUDGES_PRESENTATION.md) for presentation guide
-7. Review [ROLE_BASED_ACCESS.md](ROLE_BASED_ACCESS.md) for access control details
-8. Inspect browser console for errors
-9. Verify database connections and RLS policies
+1. **Netlify Deployment Issues**: See [NETLIFY_SETUP.md](NETLIFY_SETUP.md) or [NETLIFY_ENV_VARS.md](NETLIFY_ENV_VARS.md)
+2. Check the [SETUP_GUIDE.md](SETUP_GUIDE.md) for common solutions
+3. Review [TEST_CREDENTIALS.md](TEST_CREDENTIALS.md) for account setup
+4. See [DATA_SETUP_GUIDE.md](DATA_SETUP_GUIDE.md) for data seeding instructions
+5. See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment instructions
+6. Review [PROJECT_CHECKLIST.md](PROJECT_CHECKLIST.md) for project readiness
+7. Check [JUDGES_PRESENTATION.md](JUDGES_PRESENTATION.md) for presentation guide
+8. Review [ROLE_BASED_ACCESS.md](ROLE_BASED_ACCESS.md) for access control details
+9. Inspect browser console for errors
+10. Verify database connections and RLS policies
+
+### 🚨 Common Netlify Issues
+
+**Error: "Missing Supabase environment variables"**
+- Solution: Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Netlify Dashboard
+- See [NETLIFY_ENV_VARS.md](NETLIFY_ENV_VARS.md) for quick fix
 
 ---
 

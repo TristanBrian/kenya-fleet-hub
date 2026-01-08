@@ -226,18 +226,30 @@ Visit `http://localhost:4173` to verify the build.
 
 ### Option B: Netlify
 
-1. **Install Netlify CLI**:
-   ```bash
-   npm i -g netlify-cli
-   ```
+1. **Connect Repository**:
+   - Go to [Netlify Dashboard](https://app.netlify.com/)
+   - Click **Add new site** → **Import an existing project**
+   - Connect your Git provider and select repository
 
-2. **Deploy**:
-   ```bash
-   netlify deploy --prod
-   ```
+2. **Configure Build Settings** (Auto-detected):
+   - Build command: `npm run build`
+   - Publish directory: `dist`
 
-3. **Configure Environment Variables**:
-   - Netlify Dashboard → Site Settings → Environment Variables
+3. **Set Environment Variables** (CRITICAL):
+   - Go to **Site settings** → **Environment variables**
+   - Add these variables:
+     ```
+     VITE_SUPABASE_URL=https://your-project.supabase.co
+     VITE_SUPABASE_ANON_KEY=your-anon-key-here
+     VITE_MAPBOX_ACCESS_TOKEN=your-mapbox-token (optional)
+     ```
+   - **Important:** After adding variables, redeploy with cache cleared
+
+4. **Deploy**:
+   - Netlify will auto-deploy on git push
+   - Or manually: **Deploys** → **Trigger deploy** → **Clear cache and deploy site**
+
+**See [NETLIFY_SETUP.md](NETLIFY_SETUP.md) for detailed Netlify deployment guide**
 
 ### Option C: Traditional Hosting
 
