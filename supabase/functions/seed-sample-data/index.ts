@@ -300,7 +300,7 @@ serve(async (req) => {
           maintenance_logs: maintenanceLogs.length,
           fuel_logs: fuelLogs.length,
           trips: trips.length,
-          behavior_events: existingDrivers?.length > 0 ? 3 : 0,
+          behavior_events: (existingDrivers?.length ?? 0) > 0 ? 3 : 0,
         },
       }),
       {
