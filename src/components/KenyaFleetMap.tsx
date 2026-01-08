@@ -183,6 +183,8 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
                 </p>
                 <div className="flex gap-2">
                   <Input
+                    id="mapbox-token-input"
+                    name="mapbox_token"
                     type="text"
                     placeholder="pk.eyJ1..."
                     value={tokenInput}

@@ -96,8 +96,10 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>License Plate *</Label>
+            <Label htmlFor="vehicle-license">License Plate *</Label>
             <Input
+              id="vehicle-license"
+              name="license_plate"
               value={formData.license_plate}
               onChange={(e) => setFormData({ ...formData, license_plate: e.target.value })}
               placeholder="KXX 123A"
@@ -106,9 +108,9 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
           </div>
           
           <div>
-            <Label>Vehicle Type *</Label>
+            <Label htmlFor="vehicle-type">Vehicle Type *</Label>
             <Select value={formData.vehicle_type} onValueChange={(v) => setFormData({ ...formData, vehicle_type: v })} required>
-              <SelectTrigger className="bg-background">
+              <SelectTrigger id="vehicle-type" className="bg-background">
                 <SelectValue placeholder="Select vehicle type" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
@@ -122,12 +124,12 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
           </div>
 
           <div>
-            <Label>Route Assigned</Label>
+            <Label htmlFor="vehicle-route">Route Assigned</Label>
             <Select 
               value={formData.route_assigned || "none"} 
               onValueChange={(v) => setFormData({ ...formData, route_assigned: v === "none" ? "" : v })}
             >
-              <SelectTrigger className="bg-background">
+              <SelectTrigger id="vehicle-route" className="bg-background">
                 <SelectValue placeholder="Select route" />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
@@ -142,9 +144,9 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
           </div>
 
           <div>
-            <Label>Status *</Label>
+            <Label htmlFor="vehicle-status">Status *</Label>
             <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-              <SelectTrigger className="bg-background">
+              <SelectTrigger id="vehicle-status" className="bg-background">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
@@ -156,8 +158,10 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
           </div>
 
           <div>
-            <Label>Fuel Efficiency (km/L)</Label>
+            <Label htmlFor="vehicle-fuel-efficiency">Fuel Efficiency (km/L)</Label>
             <Input
+              id="vehicle-fuel-efficiency"
+              name="fuel_efficiency_kml"
               type="number"
               step="0.1"
               value={formData.fuel_efficiency_kml}

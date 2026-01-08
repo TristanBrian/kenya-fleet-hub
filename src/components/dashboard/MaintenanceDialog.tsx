@@ -81,9 +81,9 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Vehicle</Label>
+            <Label htmlFor="maintenance-vehicle">Vehicle</Label>
             <Select value={formData.vehicle_id} onValueChange={(v) => setFormData({ ...formData, vehicle_id: v })} required>
-              <SelectTrigger>
+              <SelectTrigger id="maintenance-vehicle">
                 <SelectValue placeholder="Select vehicle" />
               </SelectTrigger>
               <SelectContent>
@@ -94,16 +94,20 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
             </Select>
           </div>
           <div>
-            <Label>Service Type</Label>
+            <Label htmlFor="maintenance-service-type">Service Type</Label>
             <Input
+              id="maintenance-service-type"
+              name="service_type"
               value={formData.service_type}
               onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
               required
             />
           </div>
           <div>
-            <Label>Description</Label>
+            <Label htmlFor="maintenance-description">Description</Label>
             <Textarea
+              id="maintenance-description"
+              name="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
@@ -111,8 +115,10 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Date Performed</Label>
+              <Label htmlFor="maintenance-date">Date Performed</Label>
               <Input
+                id="maintenance-date"
+                name="date_performed"
                 type="date"
                 value={formData.date_performed}
                 onChange={(e) => setFormData({ ...formData, date_performed: e.target.value })}
@@ -120,8 +126,10 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
               />
             </div>
             <div>
-              <Label>Cost (KES)</Label>
+              <Label htmlFor="maintenance-cost">Cost (KES)</Label>
               <Input
+                id="maintenance-cost"
+                name="cost_kes"
                 type="number"
                 value={formData.cost_kes}
                 onChange={(e) => setFormData({ ...formData, cost_kes: e.target.value })}
@@ -131,16 +139,20 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Next Due Date</Label>
+              <Label htmlFor="maintenance-next-due">Next Due Date</Label>
               <Input
+                id="maintenance-next-due"
+                name="next_due_date"
                 type="date"
                 value={formData.next_due_date}
                 onChange={(e) => setFormData({ ...formData, next_due_date: e.target.value })}
               />
             </div>
             <div>
-              <Label>Performed By</Label>
+              <Label htmlFor="maintenance-performed-by">Performed By</Label>
               <Input
+                id="maintenance-performed-by"
+                name="performed_by"
                 value={formData.performed_by}
                 onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
               />

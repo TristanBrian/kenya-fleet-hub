@@ -180,10 +180,12 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
             {!driver && (
               <>
                 <div>
-                  <Label className="flex items-center gap-2">
+                  <Label htmlFor="driver-full-name" className="flex items-center gap-2">
                     <User className="h-4 w-4" /> Full Name *
                   </Label>
                   <Input
+                    id="driver-full-name"
+                    name="full_name"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     placeholder="John Kamau"
@@ -191,10 +193,12 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
                   />
                 </div>
                 <div>
-                  <Label className="flex items-center gap-2">
+                  <Label htmlFor="driver-email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4" /> Email *
                   </Label>
                   <Input
+                    id="driver-email"
+                    name="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -203,10 +207,13 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
                   />
                 </div>
                 <div>
-                  <Label className="flex items-center gap-2">
+                  <Label htmlFor="driver-mobile" className="flex items-center gap-2">
                     <Phone className="h-4 w-4" /> Mobile Phone
                   </Label>
                   <Input
+                    id="driver-mobile"
+                    name="mobile_phone"
+                    type="tel"
                     value={formData.mobile_phone}
                     onChange={(e) => setFormData({ ...formData, mobile_phone: e.target.value })}
                     placeholder="+254 7XX XXX XXX"
@@ -215,10 +222,12 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
               </>
             )}
             <div>
-              <Label className="flex items-center gap-2">
+              <Label htmlFor="driver-license" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" /> License Number *
               </Label>
               <Input
+                id="driver-license"
+                name="license_number"
                 value={formData.license_number}
                 onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
                 placeholder="DL-12345"
@@ -226,11 +235,11 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
               />
             </div>
             <div>
-              <Label className="flex items-center gap-2">
+              <Label htmlFor="driver-vehicle" className="flex items-center gap-2">
                 <Car className="h-4 w-4" /> Assign Vehicle
               </Label>
               <Select value={formData.vehicle_id || "none"} onValueChange={(v) => setFormData({ ...formData, vehicle_id: v === "none" ? "" : v })}>
-                <SelectTrigger>
+                <SelectTrigger id="driver-vehicle">
                   <SelectValue placeholder="Select vehicle (optional)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,8 +255,10 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
             {driver && (
               <>
                 <div>
-                  <Label>Performance Score (0-100)</Label>
+                  <Label htmlFor="driver-performance">Performance Score (0-100)</Label>
                   <Input
+                    id="driver-performance"
+                    name="performance_score"
                     type="number"
                     min="0"
                     max="100"
@@ -257,8 +268,10 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
                   />
                 </div>
                 <div>
-                  <Label>Total Trips</Label>
+                  <Label htmlFor="driver-trips">Total Trips</Label>
                   <Input
+                    id="driver-trips"
+                    name="total_trips"
                     type="number"
                     min="0"
                     value={formData.total_trips}

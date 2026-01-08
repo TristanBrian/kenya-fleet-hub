@@ -177,8 +177,10 @@ export const SettingsManager = () => {
             <CardContent className="space-y-4">
               <form onSubmit={addVehicleType} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
                 <div>
-                  <Label>Type Name *</Label>
+                  <Label htmlFor="vehicle-type-name">Type Name *</Label>
                   <Input
+                    id="vehicle-type-name"
+                    name="vehicle_type_name"
                     value={newVehicleType.name}
                     onChange={(e) => setNewVehicleType({ ...newVehicleType, name: e.target.value })}
                     placeholder="e.g., Truck - 15 Ton"
@@ -186,8 +188,10 @@ export const SettingsManager = () => {
                   />
                 </div>
                 <div>
-                  <Label>Description</Label>
+                  <Label htmlFor="vehicle-type-description">Description</Label>
                   <Input
+                    id="vehicle-type-description"
+                    name="vehicle_type_description"
                     value={newVehicleType.description}
                     onChange={(e) => setNewVehicleType({ ...newVehicleType, description: e.target.value })}
                     placeholder="Optional description"
@@ -236,8 +240,10 @@ export const SettingsManager = () => {
             <CardContent className="space-y-4">
               <form onSubmit={addRoute} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-muted/50 rounded-lg">
                 <div>
-                  <Label>Route Name *</Label>
+                  <Label htmlFor="route-name">Route Name *</Label>
                   <Input
+                    id="route-name"
+                    name="route_name"
                     value={newRoute.name}
                     onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
                     placeholder="e.g., Nairobi-Mombasa"
@@ -245,8 +251,10 @@ export const SettingsManager = () => {
                   />
                 </div>
                 <div>
-                  <Label>Start Location *</Label>
+                  <Label htmlFor="route-start">Start Location *</Label>
                   <Input
+                    id="route-start"
+                    name="route_start_location"
                     value={newRoute.start_location}
                     onChange={(e) => setNewRoute({ ...newRoute, start_location: e.target.value })}
                     placeholder="e.g., Nairobi"
@@ -254,8 +262,10 @@ export const SettingsManager = () => {
                   />
                 </div>
                 <div>
-                  <Label>End Location *</Label>
+                  <Label htmlFor="route-end">End Location *</Label>
                   <Input
+                    id="route-end"
+                    name="route_end_location"
                     value={newRoute.end_location}
                     onChange={(e) => setNewRoute({ ...newRoute, end_location: e.target.value })}
                     placeholder="e.g., Mombasa"
@@ -263,8 +273,10 @@ export const SettingsManager = () => {
                   />
                 </div>
                 <div>
-                  <Label>Distance (km)</Label>
+                  <Label htmlFor="route-distance">Distance (km)</Label>
                   <Input
+                    id="route-distance"
+                    name="route_distance"
                     type="number"
                     value={newRoute.distance_km}
                     onChange={(e) => setNewRoute({ ...newRoute, distance_km: e.target.value })}
