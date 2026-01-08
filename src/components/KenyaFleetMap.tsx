@@ -23,21 +23,32 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
-  const [mapboxToken, setMapboxToken] = useState<string>(
-    localStorage.getItem('mapbox_token') || ''
-  );
+  
+  // Get token from environment variable first, then localStorage as fallback
+  const envToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+  const storedToken = localStorage.getItem('mapbox_token') || '';
+  const initialToken = envToken || storedToken;
+  
+  const [mapboxToken, setMapboxToken] = useState<string>(initialToken);
   const [tokenInput, setTokenInput] = useState('');
-  const [isConfigured, setIsConfigured] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(!!initialToken);
 
   useEffect(() => {
-    if (mapboxToken) {
+    // Update token if environment variable is set
+    if (envToken && envToken !== mapboxToken) {
+      setMapboxToken(envToken);
+      setIsConfigured(true);
+    } else if (mapboxToken) {
       setIsConfigured(true);
     }
-  }, [mapboxToken]);
+  }, [envToken, mapboxToken]);
 
   const handleSaveToken = () => {
     if (tokenInput.trim()) {
-      localStorage.setItem('mapbox_token', tokenInput.trim());
+      // Save to localStorage as fallback (only if env var not set)
+      if (!envToken) {
+        localStorage.setItem('mapbox_token', tokenInput.trim());
+      }
       setMapboxToken(tokenInput.trim());
       setIsConfigured(true);
     }
@@ -140,32 +151,48 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
         <CardHeader>
           <CardTitle>Configure Mapbox</CardTitle>
           <CardDescription>
-            Enter your Mapbox public token to enable live tracking map
+            Mapbox access token is required to enable live tracking map
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Get your free public token from{' '}
-              <a
-                href="https://account.mapbox.com/access-tokens/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Mapbox Dashboard
-              </a>
-            </p>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                placeholder="pk.eyJ1..."
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={handleSaveToken}>Save Token</Button>
-            </div>
+            {envToken ? (
+              <div className="p-3 bg-success/10 border border-success/20 rounded-md">
+                <p className="text-sm text-success font-medium">
+                  ✓ Using Mapbox token from environment variable
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Token configured via VITE_MAPBOX_ACCESS_TOKEN
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Option 1 (Recommended):</strong> Set <code className="bg-muted px-1 py-0.5 rounded">VITE_MAPBOX_ACCESS_TOKEN</code> in your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Option 2:</strong> Enter your Mapbox public token below. Get your free token from{' '}
+                  <a
+                    href="https://account.mapbox.com/access-tokens/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Mapbox Dashboard
+                  </a>
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    placeholder="pk.eyJ1..."
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSaveToken}>Save Token</Button>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

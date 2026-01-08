@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Truck, Clock, Navigation, AlertCircle } from "lucide-react";
+import { MapPin, Truck, Clock, Navigation, AlertCircle, ShieldX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import KenyaFleetMap from "@/components/KenyaFleetMap";
+import { useRole } from "@/hooks/useRole";
 
 interface Vehicle {
   id: string;
@@ -16,8 +18,55 @@ interface Vehicle {
 }
 
 const LiveTracking = () => {
+  const navigate = useNavigate();
+  const { role, loading: roleLoading, hasAnyRole } = useRole();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Check if user has access to live tracking
+  useEffect(() => {
+    if (!roleLoading && !hasAnyRole(["fleet_manager", "operations"])) {
+      navigate("/dashboard");
+    }
+  }, [roleLoading, role, navigate, hasAnyRole]);
+
+  if (roleLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <MapPin className="h-12 w-12 animate-pulse text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading live tracking...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAnyRole(["fleet_manager", "operations"])) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <ShieldX className="h-5 w-5" />
+              Access Denied
+            </CardTitle>
+            <CardDescription>You don't have permission to view live tracking</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Live tracking is only available to Fleet Managers and Operations staff.
+            </p>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+            >
+              Go to Dashboard
+            </button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   useEffect(() => {
     fetchVehicles();
@@ -80,17 +129,6 @@ const LiveTracking = () => {
   const getVehicleIcon = (type: string) => {
     return <Truck className="h-5 w-5" />;
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <MapPin className="h-12 w-12 animate-pulse text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading live tracking...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-8">

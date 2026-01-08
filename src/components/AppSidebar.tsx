@@ -17,15 +17,23 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useRole, AppRole } from "@/hooks/useRole";
 
-const navItems = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
-  { title: "Vehicles", url: "/vehicles", icon: Truck },
-  { title: "Drivers", url: "/drivers", icon: Users },
-  { title: "Live Tracking", url: "/live-tracking", icon: MapPin },
-  { title: "Maintenance", url: "/maintenance", icon: Wrench },
-  { title: "Analytics", url: "/analytics", icon: BarChart3 },
-  { title: "Settings", url: "/settings", icon: Settings },
+interface NavItem {
+  title: string;
+  url: string;
+  icon: any;
+  roles: AppRole[]; // Roles that can access this item
+}
+
+const allNavItems: NavItem[] = [
+  { title: "Dashboard", url: "/dashboard", icon: Home, roles: ["fleet_manager", "operations", "driver", "finance"] },
+  { title: "Vehicles", url: "/vehicles", icon: Truck, roles: ["fleet_manager", "operations", "finance"] },
+  { title: "Drivers", url: "/drivers", icon: Users, roles: ["fleet_manager", "operations"] },
+  { title: "Live Tracking", url: "/live-tracking", icon: MapPin, roles: ["fleet_manager", "operations"] },
+  { title: "Maintenance", url: "/maintenance", icon: Wrench, roles: ["fleet_manager", "operations", "finance"] },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["fleet_manager", "finance"] },
+  { title: "Settings", url: "/settings", icon: Settings, roles: ["fleet_manager", "operations", "driver", "finance"] },
 ];
 
 export function AppSidebar() {
@@ -34,6 +42,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { role, hasAnyRole } = useRole();
   const currentPath = location.pathname;
 
   const isActive = (path: string) => currentPath === path;
@@ -43,6 +52,12 @@ export function AppSidebar() {
     toast({ title: "Signed out successfully" });
     navigate("/auth");
   };
+
+  // Filter nav items based on user role
+  const navItems = allNavItems.filter((item) => {
+    if (!role) return false;
+    return hasAnyRole(item.roles);
+  });
 
   return (
     <Sidebar collapsible="icon" className="border-r">
