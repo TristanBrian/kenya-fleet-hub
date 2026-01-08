@@ -16,10 +16,17 @@ const Layout = ({ children }: LayoutProps) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+          navigate("/auth");
+        }
+      } catch {
+        // If the browser/network can't reach the backend, don't crash.
         navigate("/auth");
-        return;
       }
     };
 

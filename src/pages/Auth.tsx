@@ -23,22 +23,38 @@ const Auth = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/dashboard");
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          navigate("/dashboard");
+        }
+      } catch (error: any) {
+        // Avoid blank screens when the browser/network can't reach the backend
+        toast({
+          variant: "destructive",
+          title: "Connection issue",
+          description:
+            error?.message ||
+            "Unable to reach the backend. Please check your internet connection and try again.",
+        });
       }
     };
+
     checkUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
         navigate("/dashboard");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,16 +120,12 @@ const Auth = () => {
   const handleSeedAccounts = async () => {
     setSeeding(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/seed-test-accounts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const { data, error } = await supabase.functions.invoke("seed-test-accounts", {
+        body: {},
       });
 
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || 'Failed to seed accounts');
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast({
         title: "Test accounts created!",
@@ -123,7 +135,9 @@ const Auth = () => {
       toast({
         variant: "destructive",
         title: "Seeding failed",
-        description: error.message,
+        description:
+          error?.message ||
+          "Unable to reach the backend. Please check your internet connection and try again.",
       });
     } finally {
       setSeeding(false);
