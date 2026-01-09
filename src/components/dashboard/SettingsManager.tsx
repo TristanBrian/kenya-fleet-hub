@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Settings, Link2, CheckCircle, XCircle, Map, Cloud, Database } from "lucide-react";
+import { Plus, Trash2, Settings, Link2, CheckCircle, XCircle, Map, Cloud, Database, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useRole } from "@/hooks/useRole";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const SettingsManager = () => {
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
@@ -16,6 +18,7 @@ export const SettingsManager = () => {
   const [newVehicleType, setNewVehicleType] = useState({ name: "", description: "" });
   const [newRoute, setNewRoute] = useState({ name: "", start_location: "", end_location: "", distance_km: "" });
   const { toast } = useToast();
+  const { role, loading: roleLoading, isFleetManager } = useRole();
 
   // API connection status (mock for demo)
   const [apiStatus] = useState({
@@ -88,13 +91,36 @@ export const SettingsManager = () => {
     }
   };
 
+  // Show loading state
+  if (roleLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Block access for non-fleet managers
+  if (!isFleetManager) {
+    return (
+      <div className="space-y-6">
+        <Alert variant="destructive">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            Only Fleet Managers can access settings. Please contact your administrator if you need access.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Settings className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold">Fleet Settings</h2>
       </div>
-
       <Tabs defaultValue="integrations" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="integrations">
