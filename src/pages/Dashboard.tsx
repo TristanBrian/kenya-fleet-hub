@@ -1,10 +1,11 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, AlertCircle } from "lucide-react";
+import { Truck, AlertCircle, DollarSign, Wrench, BarChart3, Users, TrendingDown, TrendingUp, Fuel } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { DriverDashboard } from "@/components/dashboard/DriverDashboard";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, DollarSign, Users, Wrench } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const Dashboard = () => {
         };
       case "driver":
         return {
-          title: `Welcome, ${profile?.full_name || "Driver"}`,
+          title: `Karibu, ${profile?.full_name || "Driver"}!`,
           description: "Your trips, vehicle, and performance overview",
         };
       case "finance":
@@ -78,19 +79,78 @@ const Dashboard = () => {
   );
 };
 
-// Finance-specific dashboard component
+// Finance-specific dashboard component with real data
 const FinanceDashboard = () => {
+  const [fuelData, setFuelData] = useState({ total: 0, count: 0 });
+  const [maintenanceData, setMaintenanceData] = useState({ total: 0, count: 0 });
+  const [vehicleCount, setVehicleCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFinanceData();
+  }, []);
+
+  const fetchFinanceData = async () => {
+    try {
+      // Fetch fuel logs for current month
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const [fuelRes, maintenanceRes, vehiclesRes] = await Promise.all([
+        supabase
+          .from("fuel_logs")
+          .select("total_cost_kes")
+          .gte("created_at", startOfMonth.toISOString()),
+        supabase
+          .from("maintenance_logs")
+          .select("cost_kes")
+          .gte("date_performed", startOfMonth.toISOString()),
+        supabase
+          .from("vehicles")
+          .select("id", { count: 'exact' })
+      ]);
+
+      const fuelTotal = fuelRes.data?.reduce((sum, log) => sum + (log.total_cost_kes || 0), 0) || 0;
+      const maintenanceTotal = maintenanceRes.data?.reduce((sum, log) => sum + (log.cost_kes || 0), 0) || 0;
+
+      setFuelData({ total: fuelTotal, count: fuelRes.data?.length || 0 });
+      setMaintenanceData({ total: maintenanceTotal, count: maintenanceRes.data?.length || 0 });
+      setVehicleCount(vehiclesRes.count || 0);
+    } catch (error) {
+      console.error("Error fetching finance data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalExpenses = fuelData.total + maintenanceData.total;
+  const costPerVehicle = vehicleCount > 0 ? Math.round(totalExpenses / vehicleCount) : 0;
+  const fuelPercentage = totalExpenses > 0 ? Math.round((fuelData.total / totalExpenses) * 100) : 0;
+  const maintenancePercentage = totalExpenses > 0 ? Math.round((maintenanceData.total / totalExpenses) * 100) : 0;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <DollarSign className="h-12 w-12 animate-pulse text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading financial data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Monthly Fuel Cost</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Fuel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">KES 2,450,000</div>
-            <p className="text-xs text-muted-foreground">-5.2% from last month</p>
+            <div className="text-2xl font-bold">KES {fuelData.total.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{fuelData.count} fuel entries this month</p>
           </CardContent>
         </Card>
 
@@ -100,19 +160,19 @@ const FinanceDashboard = () => {
             <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">KES 480,000</div>
-            <p className="text-xs text-muted-foreground">-12% from last month</p>
+            <div className="text-2xl font-bold">KES {maintenanceData.total.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{maintenanceData.count} services this month</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">KES 380,000</div>
-            <p className="text-xs text-muted-foreground">Through optimization</p>
+            <div className="text-2xl font-bold">KES {totalExpenses.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Combined costs</p>
           </CardContent>
         </Card>
 
@@ -122,8 +182,8 @@ const FinanceDashboard = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">KES 136,111</div>
-            <p className="text-xs text-muted-foreground">Average monthly</p>
+            <div className="text-2xl font-bold">KES {costPerVehicle.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{vehicleCount} vehicles in fleet</p>
           </CardContent>
         </Card>
       </div>
@@ -137,31 +197,36 @@ const FinanceDashboard = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
-                <p className="font-medium">Fuel Costs</p>
-                <p className="text-sm text-muted-foreground">58% of total expenses</p>
+                <p className="font-medium flex items-center gap-2">
+                  <Fuel className="h-4 w-4 text-primary" />
+                  Fuel Costs
+                </p>
+                <p className="text-sm text-muted-foreground">{fuelPercentage}% of total expenses</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold">KES 2,450,000</p>
+                <p className="text-2xl font-bold">KES {fuelData.total.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
-                <p className="font-medium">Maintenance</p>
-                <p className="text-sm text-muted-foreground">20% of total expenses</p>
+                <p className="font-medium flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-primary" />
+                  Maintenance
+                </p>
+                <p className="text-sm text-muted-foreground">{maintenancePercentage}% of total expenses</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold">KES 480,000</p>
+                <p className="text-2xl font-bold">KES {maintenanceData.total.toLocaleString()}</p>
               </div>
             </div>
-            <div className="flex items-center justify-between p-4 border rounded-lg bg-success/5">
-              <div>
-                <p className="font-medium">Total Savings</p>
-                <p className="text-sm text-muted-foreground">Through route optimization</p>
+            {totalExpenses === 0 && (
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
+                <div>
+                  <p className="font-medium">No Expenses Recorded</p>
+                  <p className="text-sm text-muted-foreground">Add fuel logs and maintenance records to see financial data</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-success">KES 380,000</p>
-              </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -170,13 +235,22 @@ const FinanceDashboard = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5" />
-            Budget Alerts
+            Budget Summary
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            All expenses are within budget. Fuel costs are 5.2% below projected spending.
-          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              {totalExpenses > 0 
+                ? `This month's total expenditure is KES ${totalExpenses.toLocaleString()}. Fuel accounts for ${fuelPercentage}% and maintenance for ${maintenancePercentage}% of costs.`
+                : "No expenses recorded this month yet. Financial data will appear as fuel and maintenance logs are added."}
+            </p>
+            {vehicleCount > 0 && totalExpenses > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Average cost per vehicle: <strong>KES {costPerVehicle.toLocaleString()}</strong>
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
