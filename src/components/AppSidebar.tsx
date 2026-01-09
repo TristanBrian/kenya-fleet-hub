@@ -33,7 +33,7 @@ const allNavItems: NavItem[] = [
   { title: "Live Tracking", url: "/live-tracking", icon: MapPin, roles: ["fleet_manager", "operations"] },
   { title: "Maintenance", url: "/maintenance", icon: Wrench, roles: ["fleet_manager", "operations", "finance"] },
   { title: "Analytics", url: "/analytics", icon: BarChart3, roles: ["fleet_manager", "finance"] },
-  { title: "Settings", url: "/settings", icon: Settings, roles: ["fleet_manager", "operations", "driver", "finance"] },
+  { title: "Settings", url: "/settings", icon: Settings, roles: ["fleet_manager"] },
 ];
 
 export function AppSidebar() {
