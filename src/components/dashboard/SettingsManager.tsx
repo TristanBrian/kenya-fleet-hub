@@ -4,13 +4,42 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Settings, Link2, CheckCircle, XCircle, Map, Cloud, Database, ShieldAlert, Save, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, Settings, Link2, CheckCircle, XCircle, Map, Cloud, Database, ShieldAlert, Save, Eye, EyeOff, Fuel, Thermometer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRole } from "@/hooks/useRole";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+// Helper to get/set API keys from localStorage
+const API_KEYS_STORAGE_KEY = 'safiri_api_keys';
+
+interface ApiKeys {
+  mapbox?: string;
+  weather?: string;
+  fuel?: string;
+}
+
+const getStoredApiKeys = (): ApiKeys => {
+  try {
+    const stored = localStorage.getItem(API_KEYS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
+const setStoredApiKeys = (keys: ApiKeys) => {
+  localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+};
 
 export const SettingsManager = () => {
   const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
@@ -20,12 +49,16 @@ export const SettingsManager = () => {
   const { toast } = useToast();
   const { role, loading: roleLoading, isFleetManager } = useRole();
 
-  // Mapbox token management
-  const [mapboxToken, setMapboxToken] = useState("");
-  const [showToken, setShowToken] = useState(false);
-  const [savingToken, setSavingToken] = useState(false);
+  // API key management
+  const [apiKeys, setApiKeys] = useState<ApiKeys>({});
+  const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  
+  // Dialog states for API configuration
+  const [configDialog, setConfigDialog] = useState<{ open: boolean; type: 'weather' | 'fuel' | null }>({ open: false, type: null });
+  const [tempApiKey, setTempApiKey] = useState('');
 
-  // Check if Mapbox is configured
+  // Check if APIs are configured
   const isMapboxConfigured = () => {
     const envToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
     const storedToken = localStorage.getItem('mapbox_token') || '';
@@ -34,24 +67,36 @@ export const SettingsManager = () => {
 
   // API connection status
   const [apiStatus, setApiStatus] = useState({
-    mapbox: { connected: false, name: "Mapbox", description: "Real-time GPS tracking and maps" },
-    database: { connected: true, name: "Lovable Cloud", description: "Database and authentication" },
-    weather: { connected: false, name: "Weather API", description: "Route weather conditions" },
-    fuel: { connected: false, name: "Fuel Price API", description: "Live fuel prices in Kenya" },
+    mapbox: { connected: false, name: "Mapbox", description: "Real-time GPS tracking and maps", icon: Map },
+    database: { connected: true, name: "Lovable Cloud", description: "Database and authentication", icon: Database },
+    weather: { connected: false, name: "OpenWeather API", description: "Route weather conditions", icon: Thermometer },
+    fuel: { connected: false, name: "Fuel Price API", description: "Live fuel prices in Kenya", icon: Fuel },
   });
+
+  // Mapbox token management
+  const [mapboxToken, setMapboxToken] = useState("");
+  const [showMapboxToken, setShowMapboxToken] = useState(false);
 
   useEffect(() => {
     fetchData();
-    // Load existing Mapbox token for display
-    const storedToken = localStorage.getItem('mapbox_token') || '';
-    setMapboxToken(storedToken);
+    loadApiKeys();
+  }, []);
+
+  const loadApiKeys = () => {
+    const keys = getStoredApiKeys();
+    const storedMapboxToken = localStorage.getItem('mapbox_token') || '';
     
-    // Update Mapbox status
+    setApiKeys(keys);
+    setMapboxToken(storedMapboxToken);
+    
+    // Update API status based on stored keys
     setApiStatus(prev => ({
       ...prev,
-      mapbox: { ...prev.mapbox, connected: isMapboxConfigured() }
+      mapbox: { ...prev.mapbox, connected: isMapboxConfigured() },
+      weather: { ...prev.weather, connected: !!keys.weather },
+      fuel: { ...prev.fuel, connected: !!keys.fuel },
     }));
-  }, []);
+  };
 
   const fetchData = async () => {
     const [typesRes, routesRes] = await Promise.all([
@@ -65,11 +110,7 @@ export const SettingsManager = () => {
   const handleSaveMapboxToken = () => {
     const token = mapboxToken.trim();
     if (!token) {
-      toast({ 
-        title: "Error", 
-        description: "Please enter a token", 
-        variant: "destructive" 
-      });
+      toast({ title: "Error", description: "Please enter a token", variant: "destructive" });
       return;
     }
     
@@ -82,25 +123,18 @@ export const SettingsManager = () => {
       return;
     }
 
-    setSavingToken(true);
+    setSavingKey('mapbox');
     try {
       localStorage.setItem('mapbox_token', token);
       setApiStatus(prev => ({
         ...prev,
         mapbox: { ...prev.mapbox, connected: true }
       }));
-      toast({ 
-        title: "Mafanikio!", 
-        description: "Mapbox token saved. Maps will now work across the application." 
-      });
+      toast({ title: "Mafanikio!", description: "Mapbox token saved. Maps will now work across the application." });
     } catch (error) {
-      toast({ 
-        title: "Error", 
-        description: "Failed to save token", 
-        variant: "destructive" 
-      });
+      toast({ title: "Error", description: "Failed to save token", variant: "destructive" });
     } finally {
-      setSavingToken(false);
+      setSavingKey(null);
     }
   };
 
@@ -111,10 +145,48 @@ export const SettingsManager = () => {
       ...prev,
       mapbox: { ...prev.mapbox, connected: false }
     }));
-    toast({ 
-      title: "Token Removed", 
-      description: "Mapbox token has been removed." 
-    });
+    toast({ title: "Token Removed", description: "Mapbox token has been removed." });
+  };
+
+  const handleSaveApiKey = (type: 'weather' | 'fuel') => {
+    const key = tempApiKey.trim();
+    if (!key) {
+      toast({ title: "Error", description: "Please enter an API key", variant: "destructive" });
+      return;
+    }
+
+    setSavingKey(type);
+    try {
+      const updatedKeys = { ...apiKeys, [type]: key };
+      setStoredApiKeys(updatedKeys);
+      setApiKeys(updatedKeys);
+      setApiStatus(prev => ({
+        ...prev,
+        [type]: { ...prev[type], connected: true }
+      }));
+      toast({ 
+        title: "Mafanikio!", 
+        description: `${type === 'weather' ? 'Weather' : 'Fuel Price'} API key saved successfully.` 
+      });
+      setConfigDialog({ open: false, type: null });
+      setTempApiKey('');
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to save API key", variant: "destructive" });
+    } finally {
+      setSavingKey(null);
+    }
+  };
+
+  const handleRemoveApiKey = (type: 'weather' | 'fuel') => {
+    const updatedKeys = { ...apiKeys };
+    delete updatedKeys[type];
+    setStoredApiKeys(updatedKeys);
+    setApiKeys(updatedKeys);
+    setApiStatus(prev => ({
+      ...prev,
+      [type]: { ...prev[type], connected: false }
+    }));
+    toast({ title: "API Key Removed", description: `${type === 'weather' ? 'Weather' : 'Fuel Price'} API key has been removed.` });
   };
 
   const addVehicleType = async (e: React.FormEvent) => {
@@ -167,6 +239,11 @@ export const SettingsManager = () => {
     }
   };
 
+  const openConfigDialog = (type: 'weather' | 'fuel') => {
+    setTempApiKey(apiKeys[type] || '');
+    setConfigDialog({ open: true, type });
+  };
+
   // Show loading state
   if (roleLoading) {
     return (
@@ -191,12 +268,41 @@ export const SettingsManager = () => {
     );
   }
 
+  const getApiDialogInfo = () => {
+    if (configDialog.type === 'weather') {
+      return {
+        title: "Configure OpenWeather API",
+        description: "Add your OpenWeather API key to enable weather conditions on routes",
+        placeholder: "Enter your OpenWeather API key",
+        helpText: (
+          <p className="text-xs text-muted-foreground">
+            Get your free API key from{" "}
+            <a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              OpenWeatherMap
+            </a>
+          </p>
+        ),
+      };
+    }
+    return {
+      title: "Configure Fuel Price API",
+      description: "Add your API key to enable live fuel prices in Kenya",
+      placeholder: "Enter your Fuel Price API key",
+      helpText: (
+        <p className="text-xs text-muted-foreground">
+          Configure an API key for real-time fuel pricing data
+        </p>
+      ),
+    };
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Settings className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold">Fleet Settings</h2>
       </div>
+      
       <Tabs defaultValue="integrations" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="integrations">
@@ -223,7 +329,7 @@ export const SettingsManager = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2 mb-4">
-                  <Badge variant={apiStatus.mapbox.connected ? "default" : "secondary"}>
+                  <Badge variant={apiStatus.mapbox.connected ? "default" : "secondary"} className={apiStatus.mapbox.connected ? "bg-success" : ""}>
                     {apiStatus.mapbox.connected ? (
                       <><CheckCircle className="h-3 w-3 mr-1" /> Connected</>
                     ) : (
@@ -250,7 +356,7 @@ export const SettingsManager = () => {
                     <div className="relative flex-1">
                       <Input
                         id="mapbox-token"
-                        type={showToken ? "text" : "password"}
+                        type={showMapboxToken ? "text" : "password"}
                         placeholder="pk.eyJ1..."
                         value={mapboxToken}
                         onChange={(e) => setMapboxToken(e.target.value)}
@@ -261,12 +367,12 @@ export const SettingsManager = () => {
                         variant="ghost"
                         size="sm"
                         className="absolute right-0 top-0 h-full px-3"
-                        onClick={() => setShowToken(!showToken)}
+                        onClick={() => setShowMapboxToken(!showMapboxToken)}
                       >
-                        {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showMapboxToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
-                    <Button onClick={handleSaveMapboxToken} disabled={savingToken}>
+                    <Button onClick={handleSaveMapboxToken} disabled={savingKey === 'mapbox'}>
                       <Save className="h-4 w-4 mr-2" />
                       Save
                     </Button>
@@ -274,7 +380,7 @@ export const SettingsManager = () => {
                 </div>
 
                 {apiStatus.mapbox.connected && (
-                  <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-success/10 rounded-lg border border-success/20">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-success" />
                       <span className="text-sm text-success font-medium">Maps are configured and ready</span>
@@ -292,51 +398,113 @@ export const SettingsManager = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Cloud className="h-5 w-5" />
-                  Other Connected Services
+                  Connected Services
                 </CardTitle>
                 <CardDescription>
-                  Additional API connections for analytics and real-time data
+                  API connections for enhanced analytics and real-time data
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  {Object.entries(apiStatus)
-                    .filter(([key]) => key !== 'mapbox')
-                    .map(([key, api]) => (
-                    <Card key={key} className={`border-l-4 ${api.connected ? "border-l-success" : "border-l-muted"}`}>
-                      <CardContent className="pt-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              {key === "database" && <Database className="h-4 w-4 text-primary" />}
-                              {key === "weather" && <Cloud className="h-4 w-4 text-muted-foreground" />}
-                              {key === "fuel" && <Settings className="h-4 w-4 text-muted-foreground" />}
-                              <span className="font-semibold">{api.name}</span>
-                            </div>
-                            <p className="text-sm text-muted-foreground">{api.description}</p>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {/* Database - Always connected */}
+                  <Card className="border-l-4 border-l-success">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Database className="h-4 w-4 text-success" />
+                            <span className="font-semibold">Lovable Cloud</span>
                           </div>
-                          <Badge variant={api.connected ? "default" : "secondary"} className="flex items-center gap-1">
-                            {api.connected ? (
-                              <><CheckCircle className="h-3 w-3" /> Connected</>
-                            ) : (
-                              <><XCircle className="h-3 w-3" /> Not Connected</>
-                            )}
-                          </Badge>
+                          <p className="text-sm text-muted-foreground">Database and authentication</p>
                         </div>
-                        {!api.connected && (
-                          <Button size="sm" variant="outline" className="mt-3 w-full" onClick={() => toast({ title: "Coming Soon", description: "API integration will be available in future updates" })}>
-                            Connect API
+                        <Badge className="bg-success">
+                          <CheckCircle className="h-3 w-3 mr-1" /> Connected
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Weather API */}
+                  <Card className={`border-l-4 ${apiStatus.weather.connected ? "border-l-success" : "border-l-muted"}`}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Thermometer className={`h-4 w-4 ${apiStatus.weather.connected ? 'text-success' : 'text-muted-foreground'}`} />
+                            <span className="font-semibold">OpenWeather API</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Route weather conditions</p>
+                        </div>
+                        <Badge variant={apiStatus.weather.connected ? "default" : "secondary"} className={apiStatus.weather.connected ? "bg-success" : ""}>
+                          {apiStatus.weather.connected ? (
+                            <><CheckCircle className="h-3 w-3 mr-1" /> Connected</>
+                          ) : (
+                            <><XCircle className="h-3 w-3 mr-1" /> Not Connected</>
+                          )}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        {apiStatus.weather.connected ? (
+                          <>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => openConfigDialog('weather')}>
+                              <Settings className="h-3 w-3 mr-1" /> Configure
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleRemoveApiKey('weather')}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="sm" variant="outline" className="w-full" onClick={() => openConfigDialog('weather')}>
+                            <Plus className="h-3 w-3 mr-1" /> Connect API
                           </Button>
                         )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Fuel Price API */}
+                  <Card className={`border-l-4 ${apiStatus.fuel.connected ? "border-l-success" : "border-l-muted"}`}>
+                    <CardContent className="pt-4">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Fuel className={`h-4 w-4 ${apiStatus.fuel.connected ? 'text-success' : 'text-muted-foreground'}`} />
+                            <span className="font-semibold">Fuel Price API</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">Live fuel prices in Kenya</p>
+                        </div>
+                        <Badge variant={apiStatus.fuel.connected ? "default" : "secondary"} className={apiStatus.fuel.connected ? "bg-success" : ""}>
+                          {apiStatus.fuel.connected ? (
+                            <><CheckCircle className="h-3 w-3 mr-1" /> Connected</>
+                          ) : (
+                            <><XCircle className="h-3 w-3 mr-1" /> Not Connected</>
+                          )}
+                        </Badge>
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        {apiStatus.fuel.connected ? (
+                          <>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => openConfigDialog('fuel')}>
+                              <Settings className="h-3 w-3 mr-1" /> Configure
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => handleRemoveApiKey('fuel')}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </>
+                        ) : (
+                          <Button size="sm" variant="outline" className="w-full" onClick={() => openConfigDialog('fuel')}>
+                            <Plus className="h-3 w-3 mr-1" /> Connect API
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <div className="p-4 bg-muted/50 rounded-lg">
+                <div className="p-4 bg-muted/50 rounded-lg mt-6">
                   <h4 className="font-semibold mb-2">Analytics Data Sources</h4>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Analytics dashboards currently pull data from your connected Lovable Cloud database including:
+                    Analytics dashboards pull data from your connected Lovable Cloud database including:
                   </p>
                   <ul className="text-sm space-y-1 text-muted-foreground">
                     <li>• <strong>Vehicles:</strong> Fleet status, locations, maintenance schedules</li>
@@ -356,6 +524,7 @@ export const SettingsManager = () => {
           <Card>
             <CardHeader>
               <CardTitle>Vehicle Types</CardTitle>
+              <CardDescription>Manage the types of vehicles in your fleet</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={addVehicleType} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -397,17 +566,25 @@ export const SettingsManager = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {vehicleTypes.map((type) => (
-                    <TableRow key={type.id}>
-                      <TableCell className="font-medium">{type.name}</TableCell>
-                      <TableCell>{type.description || "-"}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => deleteVehicleType(type.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  {vehicleTypes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                        No vehicle types found. Add one above.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    vehicleTypes.map((type) => (
+                      <TableRow key={type.id}>
+                        <TableCell className="font-medium">{type.name}</TableCell>
+                        <TableCell>{type.description || "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => deleteVehicleType(type.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -419,6 +596,7 @@ export const SettingsManager = () => {
           <Card>
             <CardHeader>
               <CardTitle>Routes</CardTitle>
+              <CardDescription>Manage the routes your fleet operates on</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={addRoute} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -485,25 +663,82 @@ export const SettingsManager = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {routes.map((route) => (
-                    <TableRow key={route.id}>
-                      <TableCell className="font-medium">{route.name}</TableCell>
-                      <TableCell>{route.start_location}</TableCell>
-                      <TableCell>{route.end_location}</TableCell>
-                      <TableCell>{route.distance_km ? `${route.distance_km} km` : "-"}</TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => deleteRoute(route.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  {routes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        No routes found. Add one above.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    routes.map((route) => (
+                      <TableRow key={route.id}>
+                        <TableCell className="font-medium">{route.name}</TableCell>
+                        <TableCell>{route.start_location}</TableCell>
+                        <TableCell>{route.end_location}</TableCell>
+                        <TableCell>{route.distance_km ? `${route.distance_km} km` : "-"}</TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="ghost" onClick={() => deleteRoute(route.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* API Configuration Dialog */}
+      <Dialog open={configDialog.open} onOpenChange={(open) => setConfigDialog({ open, type: open ? configDialog.type : null })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{configDialog.type && getApiDialogInfo().title}</DialogTitle>
+            <DialogDescription>
+              {configDialog.type && getApiDialogInfo().description}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="api-key">API Key</Label>
+              <div className="relative">
+                <Input
+                  id="api-key"
+                  type={showTokens[configDialog.type || ''] ? "text" : "password"}
+                  placeholder={configDialog.type ? getApiDialogInfo().placeholder : ''}
+                  value={tempApiKey}
+                  onChange={(e) => setTempApiKey(e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowTokens(prev => ({ ...prev, [configDialog.type || '']: !prev[configDialog.type || ''] }))}
+                >
+                  {showTokens[configDialog.type || ''] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              {configDialog.type && getApiDialogInfo().helpText}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setConfigDialog({ open: false, type: null })}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={() => configDialog.type && handleSaveApiKey(configDialog.type)}
+                disabled={savingKey === configDialog.type}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save API Key
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
