@@ -53,14 +53,14 @@ export const FleetMapView = () => {
   const activeVehicles = vehiclesWithGPS.filter(v => v.status === 'active');
 
   return (
-    <Card className="h-full">
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
           <MapPin className="h-5 w-5 text-primary" />
           Fleet Map View
         </CardTitle>
         <div className="flex items-center gap-2">
-          <Badge variant="outline">
+          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
             {activeVehicles.length} active
           </Badge>
           <Badge variant="secondary">
@@ -71,8 +71,8 @@ export const FleetMapView = () => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="h-[400px]">
+      <CardContent className="p-0 flex-1">
+        <div className="h-[350px]">
           <KenyaFleetMap vehicles={vehicles} />
         </div>
       </CardContent>

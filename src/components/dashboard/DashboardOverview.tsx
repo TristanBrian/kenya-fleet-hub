@@ -9,10 +9,14 @@ export const DashboardOverview = () => {
       {/* Key Metrics Widgets */}
       <FleetMetricsWidgets />
 
-      {/* Alert Panel + Map View */}
+      {/* Alert Panel + Map View - Equal height grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <AlertPanel />
-        <FleetMapView />
+        <div className="h-full">
+          <AlertPanel />
+        </div>
+        <div className="h-full">
+          <FleetMapView />
+        </div>
       </div>
 
       {/* Live Fleet Status Grid */}
