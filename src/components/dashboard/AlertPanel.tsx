@@ -189,8 +189,8 @@ export const AlertPanel = () => {
   const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged);
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5 text-primary" />
           Alert Panel
@@ -201,8 +201,8 @@ export const AlertPanel = () => {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[300px] pr-4">
+      <CardContent className="flex-1 overflow-hidden">
+        <ScrollArea className="h-[320px] pr-4">
           {loading ? (
             <div className="text-center text-muted-foreground py-8">Loading alerts...</div>
           ) : alerts.length === 0 ? (

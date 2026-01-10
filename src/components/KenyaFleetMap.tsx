@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Input } from '@/components/ui/input';
+import { MapPin, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useRole } from '@/hooks/useRole';
 
 interface Vehicle {
   id: string;
@@ -23,9 +24,11 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markers = useRef<mapboxgl.Marker[]>([]);
+  const navigate = useNavigate();
+  const { isFleetManager } = useRole();
   
   // Helper to check if token is a valid PUBLIC token (must start with pk.)
-  const isValidPublicToken = (token: string) => token.startsWith('pk.');
+  const isValidPublicToken = (token: string) => token && token.startsWith('pk.');
 
   // Get token from environment variable first, then localStorage as fallback
   const envToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
@@ -37,45 +40,30 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
   const initialToken = validEnvToken || validStoredToken;
   
   const [mapboxToken, setMapboxToken] = useState<string>(initialToken);
-  const [tokenInput, setTokenInput] = useState('');
   const [isConfigured, setIsConfigured] = useState(!!initialToken);
-  const [tokenError, setTokenError] = useState<string | null>(
-    envToken && !isValidPublicToken(envToken) 
-      ? 'The configured token is a secret key (sk.*). Mapbox requires a public key (pk.*).' 
-      : null
-  );
 
   useEffect(() => {
-    // Update token if a valid public environment token is set
-    if (validEnvToken && validEnvToken !== mapboxToken) {
-      setMapboxToken(validEnvToken);
-      setIsConfigured(true);
-      setTokenError(null);
-    } else if (envToken && !isValidPublicToken(envToken)) {
-      // Invalid secret token in env
-      setTokenError('The configured token is a secret key (sk.*). Mapbox requires a public key (pk.*).');
-      setIsConfigured(false);
-    } else if (mapboxToken && isValidPublicToken(mapboxToken)) {
-      setIsConfigured(true);
-      setTokenError(null);
-    }
-  }, [envToken, validEnvToken, mapboxToken]);
+    // Re-check localStorage for token changes (from Settings page)
+    const checkToken = () => {
+      const currentStoredToken = localStorage.getItem('mapbox_token') || '';
+      const currentEnvToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
+      const validCurrent = isValidPublicToken(currentEnvToken) ? currentEnvToken : 
+                          isValidPublicToken(currentStoredToken) ? currentStoredToken : '';
+      
+      if (validCurrent && validCurrent !== mapboxToken) {
+        setMapboxToken(validCurrent);
+        setIsConfigured(true);
+      } else if (!validCurrent) {
+        setIsConfigured(false);
+      }
+    };
 
-  const handleSaveToken = () => {
-    const token = tokenInput.trim();
-    if (!token) return;
+    // Check immediately and set up interval
+    checkToken();
+    const interval = setInterval(checkToken, 1000);
     
-    if (!isValidPublicToken(token)) {
-      setTokenError('Please enter a public access token (starts with pk.)');
-      return;
-    }
-    
-    // Save to localStorage as fallback
-    localStorage.setItem('mapbox_token', token);
-    setMapboxToken(token);
-    setIsConfigured(true);
-    setTokenError(null);
-  };
+    return () => clearInterval(interval);
+  }, [mapboxToken]);
 
   useEffect(() => {
     if (!mapContainer.current || !isConfigured || !mapboxToken) return;
@@ -137,11 +125,11 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
         
         // Color based on status
         if (vehicle.status === 'active') {
-          el.style.backgroundColor = '#10b981'; // success green
+          el.style.backgroundColor = 'hsl(142, 76%, 36%)'; // success green
         } else if (vehicle.status === 'maintenance') {
-          el.style.backgroundColor = '#f59e0b'; // warning yellow
+          el.style.backgroundColor = 'hsl(43, 96%, 56%)'; // warning yellow
         } else {
-          el.style.backgroundColor = '#6b7280'; // gray
+          el.style.backgroundColor = 'hsl(0, 0%, 45%)'; // gray
         }
         
         el.innerHTML = '🚛';
@@ -152,7 +140,7 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
             <h3 style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">${vehicle.license_plate}</h3>
             <p style="margin: 4px 0; font-size: 13px;"><strong>Type:</strong> ${vehicle.vehicle_type}</p>
             <p style="margin: 4px 0; font-size: 13px;"><strong>Route:</strong> ${vehicle.route_assigned || 'Not assigned'}</p>
-            <p style="margin: 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: ${vehicle.status === 'active' ? '#10b981' : '#f59e0b'}; text-transform: capitalize;">${vehicle.status}</span></p>
+            <p style="margin: 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: ${vehicle.status === 'active' ? 'hsl(142, 76%, 36%)' : 'hsl(43, 96%, 56%)'}; text-transform: capitalize;">${vehicle.status}</span></p>
             <p style="margin: 4px 0; font-size: 12px; color: #666;">Lat: ${vehicle.current_latitude.toFixed(4)}, Lng: ${vehicle.current_longitude.toFixed(4)}</p>
           </div>
         `);
@@ -170,54 +158,31 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
 
   if (!isConfigured) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Configure Mapbox</CardTitle>
-          <CardDescription>
-            A Mapbox <strong>public</strong> access token (pk.*) is required
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {tokenError && (
-            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-              <p className="text-sm text-destructive font-medium">⚠ {tokenError}</p>
-            </div>
-          )}
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              <strong>Option 1 (Recommended):</strong> Set <code className="bg-muted px-1 py-0.5 rounded">VITE_MAPBOX_ACCESS_TOKEN</code> in your <code className="bg-muted px-1 py-0.5 rounded">.env</code> file with a <strong>public</strong> token (starts with <code className="bg-muted px-1 py-0.5 rounded">pk.</code>)
-            </p>
-            <p className="text-sm text-muted-foreground">
-              <strong>Option 2:</strong> Enter your Mapbox public token below. Get your free token from{' '}
-              <a
-                href="https://account.mapbox.com/access-tokens/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                Mapbox Dashboard
-              </a>
-            </p>
-            <div className="flex gap-2">
-              <Input
-                id="mapbox-token-input"
-                name="mapbox_token"
-                type="text"
-                placeholder="pk.eyJ1..."
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={handleSaveToken}>Save Token</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center h-full min-h-[300px] bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20">
+        <MapPin className="h-12 w-12 text-muted-foreground/40 mb-4" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">Map Not Configured</h3>
+        <p className="text-sm text-muted-foreground text-center max-w-xs mb-4">
+          {isFleetManager 
+            ? "Configure your Mapbox API token in Settings to enable live fleet tracking."
+            : "The fleet map has not been configured yet. Please contact your Fleet Manager."}
+        </p>
+        {isFleetManager && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/settings')}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Go to Settings
+          </Button>
+        )}
+      </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-lg overflow-hidden">
+    <div className="relative w-full h-full min-h-[400px] rounded-lg overflow-hidden">
       <div ref={mapContainer} className="absolute inset-0" />
     </div>
   );
