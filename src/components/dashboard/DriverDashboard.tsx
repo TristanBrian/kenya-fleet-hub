@@ -84,7 +84,7 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
       setProfileForm({
         full_name: profile.full_name || "",
         email: profile.email || "",
-        phone: profile.phone || "",
+        phone: profile.mobile_phone || "",
       });
     }
   }, [profile]);
@@ -145,7 +145,7 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
         .from("profiles")
         .update({
           full_name: profileForm.full_name,
-          phone: profileForm.phone,
+          mobile_phone: profileForm.phone,
         })
         .eq("id", profile.id);
 
