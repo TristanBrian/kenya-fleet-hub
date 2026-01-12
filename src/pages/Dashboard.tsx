@@ -92,20 +92,15 @@ const FinanceDashboard = () => {
 
   const fetchFinanceData = async () => {
     try {
-      // Fetch fuel logs for current month
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-
+      // Fetch ALL fuel logs and maintenance logs (not just current month)
+      // This ensures we see data regardless of when it was entered
       const [fuelRes, maintenanceRes, vehiclesRes] = await Promise.all([
         supabase
           .from("fuel_logs")
-          .select("total_cost_kes")
-          .gte("created_at", startOfMonth.toISOString()),
+          .select("total_cost_kes, created_at"),
         supabase
           .from("maintenance_logs")
-          .select("cost_kes")
-          .gte("date_performed", startOfMonth.toISOString()),
+          .select("cost_kes, date_performed"),
         supabase
           .from("vehicles")
           .select("id", { count: 'exact' })
@@ -145,12 +140,12 @@ const FinanceDashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Fuel Cost</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Fuel Cost</CardTitle>
             <Fuel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">KES {fuelData.total.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{fuelData.count} fuel entries this month</p>
+            <p className="text-xs text-muted-foreground">{fuelData.count} fuel entries</p>
           </CardContent>
         </Card>
 
@@ -161,7 +156,7 @@ const FinanceDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">KES {maintenanceData.total.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{maintenanceData.count} services this month</p>
+            <p className="text-xs text-muted-foreground">{maintenanceData.count} service records</p>
           </CardContent>
         </Card>
 
@@ -191,7 +186,7 @@ const FinanceDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Financial Overview</CardTitle>
-          <CardDescription>Monthly cost breakdown and trends</CardDescription>
+          <CardDescription>Cost breakdown and expense analysis</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -242,8 +237,8 @@ const FinanceDashboard = () => {
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
               {totalExpenses > 0 
-                ? `This month's total expenditure is KES ${totalExpenses.toLocaleString()}. Fuel accounts for ${fuelPercentage}% and maintenance for ${maintenancePercentage}% of costs.`
-                : "No expenses recorded this month yet. Financial data will appear as fuel and maintenance logs are added."}
+                ? `Total expenditure is KES ${totalExpenses.toLocaleString()}. Fuel accounts for ${fuelPercentage}% and maintenance for ${maintenancePercentage}% of costs.`
+                : "No expenses recorded yet. Financial data will appear as fuel and maintenance logs are added."}
             </p>
             {vehicleCount > 0 && totalExpenses > 0 && (
               <p className="text-sm text-muted-foreground">
