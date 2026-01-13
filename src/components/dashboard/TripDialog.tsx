@@ -110,14 +110,31 @@ export const TripDialog = ({ open, onOpenChange, trip, onSuccess }: TripDialogPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.vehicle_id) {
+      toast({ title: "Error", description: "Please select a vehicle", variant: "destructive" });
+      return;
+    }
+    
+    if (!formData.route.trim()) {
+      toast({ title: "Error", description: "Please select or enter a route", variant: "destructive" });
+      return;
+    }
+    
+    if (!formData.start_location.trim() || !formData.end_location.trim()) {
+      toast({ title: "Error", description: "Start and end locations are required", variant: "destructive" });
+      return;
+    }
+    
     setLoading(true);
 
     const payload = {
       vehicle_id: formData.vehicle_id,
       driver_id: formData.driver_id || null,
-      route: formData.route,
-      start_location: formData.start_location,
-      end_location: formData.end_location,
+      route: formData.route.trim(),
+      start_location: formData.start_location.trim(),
+      end_location: formData.end_location.trim(),
       start_time: formData.start_time,
       estimated_duration_hours: formData.estimated_duration_hours ? parseFloat(formData.estimated_duration_hours) : null,
       distance_km: formData.distance_km ? parseFloat(formData.distance_km) : null,
@@ -130,6 +147,7 @@ export const TripDialog = ({ open, onOpenChange, trip, onSuccess }: TripDialogPr
       : await supabase.from("trips").insert([payload]);
 
     if (error) {
+      console.error("Trip save error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Mafanikio!", description: `Trip ${trip ? "updated" : "created"} successfully` });
