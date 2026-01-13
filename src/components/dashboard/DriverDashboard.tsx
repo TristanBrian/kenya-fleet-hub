@@ -12,9 +12,10 @@ import {
   Truck, MapPin, TrendingUp, Fuel, Clock, 
   AlertTriangle, CheckCircle2, Star, Route,
   User, Phone, Mail, Shield, Calendar, Gauge,
-  Award, Car, Settings, Save, Eye, EyeOff
+  Award, Car, Settings, Save, Eye, EyeOff, Lock
 } from "lucide-react";
 import { format } from "date-fns";
+import { DriverOnboarding } from "./DriverOnboarding";
 
 interface DriverData {
   id: string;
@@ -68,6 +69,9 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [showPassword, setShowPassword] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ new_password: "", confirm_password: "" });
   const [profileForm, setProfileForm] = useState({
     full_name: "",
     email: "",
@@ -86,6 +90,11 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
         email: profile.email || "",
         phone: profile.mobile_phone || "",
       });
+      
+      // Check if this is a first-time driver (no phone number set)
+      if (!profile.mobile_phone) {
+        setShowOnboarding(true);
+      }
     }
   }, [profile]);
 
@@ -166,6 +175,38 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (passwordForm.new_password.length < 8) {
+      toast({ title: "Error", description: "Password must be at least 8 characters", variant: "destructive" });
+      return;
+    }
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: passwordForm.new_password,
+      });
+
+      if (error) throw error;
+
+      toast({ title: "Mafanikio!", description: "Password updated successfully" });
+      setPasswordForm({ new_password: "", confirm_password: "" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    fetchDriverData();
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 90) return "text-green-500";
     if (score >= 70) return "text-yellow-500";
@@ -207,6 +248,11 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
         </div>
       </div>
     );
+  }
+
+  // Show onboarding for first-time drivers
+  if (showOnboarding) {
+    return <DriverOnboarding profile={profile} onComplete={handleOnboardingComplete} />;
   }
 
   if (!driverData) {
@@ -630,9 +676,9 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5 text-primary" />
-                Manage Account
+                Profile Information
               </CardTitle>
-              <CardDescription>Update your profile information</CardDescription>
+              <CardDescription>Update your personal details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
@@ -693,7 +739,69 @@ export const DriverDashboard = ({ profile }: { profile: any }) => {
               <div className="flex justify-end">
                 <Button onClick={handleSaveProfile} disabled={savingProfile}>
                   <Save className="h-4 w-4 mr-2" />
-                  {savingProfile ? "Saving..." : "Save Changes"}
+                  {savingProfile ? "Saving..." : "Save Profile"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Password Change Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5 text-primary" />
+                Change Password
+              </CardTitle>
+              <CardDescription>Update your login password for security</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="new_password">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="new_password"
+                      type={showPassword ? "text" : "password"}
+                      value={passwordForm.new_password}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                      className="pl-10 pr-10"
+                      placeholder="Minimum 8 characters"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1 h-8 w-8"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirm_password"
+                      type={showPassword ? "text" : "password"}
+                      value={passwordForm.confirm_password}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                      className="pl-10"
+                      placeholder="Confirm your password"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button 
+                  onClick={handleChangePassword} 
+                  disabled={changingPassword || !passwordForm.new_password}
+                  variant="outline"
+                >
+                  <Lock className="h-4 w-4 mr-2" />
+                  {changingPassword ? "Updating..." : "Update Password"}
                 </Button>
               </div>
             </CardContent>
