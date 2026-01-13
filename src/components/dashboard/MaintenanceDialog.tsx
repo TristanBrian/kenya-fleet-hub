@@ -54,10 +54,30 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.vehicle_id) {
+      toast({ title: "Error", description: "Please select a vehicle", variant: "destructive" });
+      return;
+    }
+    
+    if (!formData.service_type.trim()) {
+      toast({ title: "Error", description: "Service type is required", variant: "destructive" });
+      return;
+    }
+    
+    if (!formData.cost_kes || parseFloat(formData.cost_kes) <= 0) {
+      toast({ title: "Error", description: "Please enter a valid cost", variant: "destructive" });
+      return;
+    }
+    
     const payload = {
-      ...formData,
+      vehicle_id: formData.vehicle_id,
+      service_type: formData.service_type.trim(),
+      description: formData.description?.trim() || null,
+      date_performed: formData.date_performed,
       cost_kes: parseFloat(formData.cost_kes),
       next_due_date: formData.next_due_date || null,
+      performed_by: formData.performed_by?.trim() || null,
     };
 
     const { error } = log
@@ -65,9 +85,10 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
       : await supabase.from("maintenance_logs").insert([payload]);
 
     if (error) {
+      console.error("Maintenance log save error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: `Log ${log ? "updated" : "created"}` });
+      toast({ title: "Success", description: `Maintenance log ${log ? "updated" : "created"} successfully` });
       onSuccess();
       onOpenChange(false);
     }

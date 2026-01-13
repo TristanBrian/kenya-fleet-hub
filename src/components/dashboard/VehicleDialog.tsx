@@ -70,9 +70,23 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.license_plate.trim()) {
+      toast({ title: "Error", description: "License plate is required", variant: "destructive" });
+      return;
+    }
+    
+    if (!formData.vehicle_type) {
+      toast({ title: "Error", description: "Vehicle type is required", variant: "destructive" });
+      return;
+    }
+    
     const payload = {
-      ...formData,
-      fuel_efficiency_kml: formData.fuel_efficiency_kml ? parseFloat(formData.fuel_efficiency_kml) : null,
+      license_plate: formData.license_plate.trim(),
+      vehicle_type: formData.vehicle_type,
+      route_assigned: formData.route_assigned || null,
+      status: formData.status,
+      fuel_efficiency_kml: formData.fuel_efficiency_kml ? parseFloat(formData.fuel_efficiency_kml) : 6.2,
     };
 
     const { error } = vehicle
@@ -80,9 +94,10 @@ export const VehicleDialog = ({ open, onOpenChange, vehicle, onSuccess }: Vehicl
       : await supabase.from("vehicles").insert([payload]);
 
     if (error) {
+      console.error("Vehicle save error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: `Vehicle ${vehicle ? "updated" : "created"}` });
+      toast({ title: "Success", description: `Vehicle ${vehicle ? "updated" : "created"} successfully` });
       onSuccess();
       onOpenChange(false);
     }
