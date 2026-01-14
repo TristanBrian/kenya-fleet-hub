@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, AlertCircle, DollarSign, Wrench, BarChart3, Users, TrendingDown, TrendingUp, Fuel } from "lucide-react";
+import { Truck, AlertCircle, DollarSign, Wrench, BarChart3, Users, TrendingDown, TrendingUp, Fuel, FileDown, Loader2 } from "lucide-react";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { DriverDashboard } from "@/components/dashboard/DriverDashboard";
 import { useRole } from "@/hooks/useRole";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-
+import { generateFleetReport, ReportData } from "@/utils/pdfReportGenerator";
+import { useToast } from "@/hooks/use-toast";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { role, profile, loading, isDriver, isFinance, isOperations, isFleetManager } = useRole();
@@ -81,10 +83,12 @@ const Dashboard = () => {
 
 // Finance-specific dashboard component with real data
 const FinanceDashboard = () => {
-  const [fuelData, setFuelData] = useState({ total: 0, count: 0 });
-  const [maintenanceData, setMaintenanceData] = useState({ total: 0, count: 0 });
+  const [fuelData, setFuelData] = useState<{ total: number; count: number; logs: any[] }>({ total: 0, count: 0, logs: [] });
+  const [maintenanceData, setMaintenanceData] = useState<{ total: number; count: number; logs: any[] }>({ total: 0, count: 0, logs: [] });
   const [vehicleCount, setVehicleCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchFinanceData();
@@ -92,15 +96,13 @@ const FinanceDashboard = () => {
 
   const fetchFinanceData = async () => {
     try {
-      // Fetch ALL fuel logs and maintenance logs (not just current month)
-      // This ensures we see data regardless of when it was entered
       const [fuelRes, maintenanceRes, vehiclesRes] = await Promise.all([
         supabase
           .from("fuel_logs")
-          .select("total_cost_kes, created_at"),
+          .select("total_cost_kes, created_at, liters, price_per_liter_kes, vehicles(license_plate)"),
         supabase
           .from("maintenance_logs")
-          .select("cost_kes, date_performed"),
+          .select("cost_kes, date_performed, service_type, vehicles(license_plate)"),
         supabase
           .from("vehicles")
           .select("id", { count: 'exact' })
@@ -109,13 +111,90 @@ const FinanceDashboard = () => {
       const fuelTotal = fuelRes.data?.reduce((sum, log) => sum + (log.total_cost_kes || 0), 0) || 0;
       const maintenanceTotal = maintenanceRes.data?.reduce((sum, log) => sum + (log.cost_kes || 0), 0) || 0;
 
-      setFuelData({ total: fuelTotal, count: fuelRes.data?.length || 0 });
-      setMaintenanceData({ total: maintenanceTotal, count: maintenanceRes.data?.length || 0 });
+      setFuelData({ total: fuelTotal, count: fuelRes.data?.length || 0, logs: fuelRes.data || [] });
+      setMaintenanceData({ total: maintenanceTotal, count: maintenanceRes.data?.length || 0, logs: maintenanceRes.data || [] });
       setVehicleCount(vehiclesRes.count || 0);
     } catch (error) {
       console.error("Error fetching finance data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setGenerating(true);
+    try {
+      const totalExpenses = fuelData.total + maintenanceData.total;
+      const costPerVehicle = vehicleCount > 0 ? Math.round(totalExpenses / vehicleCount) : 0;
+      const fuelPercentage = totalExpenses > 0 ? Math.round((fuelData.total / totalExpenses) * 100) : 0;
+      const maintenancePercentage = totalExpenses > 0 ? Math.round((maintenanceData.total / totalExpenses) * 100) : 0;
+
+      const reportData: ReportData = {
+        title: "Financial Report",
+        generatedBy: "Finance Department",
+        dateRange: "All Time",
+        summary: [
+          { label: "Total Fuel Cost", value: `KES ${fuelData.total.toLocaleString()}`, subtext: `${fuelData.count} entries` },
+          { label: "Maintenance Cost", value: `KES ${maintenanceData.total.toLocaleString()}`, subtext: `${maintenanceData.count} records` },
+          { label: "Total Expenses", value: `KES ${totalExpenses.toLocaleString()}`, subtext: "Combined costs" },
+          { label: "Cost per Vehicle", value: `KES ${costPerVehicle.toLocaleString()}`, subtext: `${vehicleCount} vehicles` },
+        ],
+        sections: [
+          {
+            title: "Cost Breakdown Analysis",
+            type: "metrics",
+            data: [
+              { label: "Fuel Percentage", value: `${fuelPercentage}% of total expenses` },
+              { label: "Maintenance Percentage", value: `${maintenancePercentage}% of total expenses` },
+              { label: "Fleet Size", value: `${vehicleCount} vehicles` },
+              { label: "Average Fuel Cost/Entry", value: `KES ${fuelData.count > 0 ? Math.round(fuelData.total / fuelData.count).toLocaleString() : 0}` },
+              { label: "Average Maintenance Cost", value: `KES ${maintenanceData.count > 0 ? Math.round(maintenanceData.total / maintenanceData.count).toLocaleString() : 0}` },
+            ],
+          },
+          {
+            title: "Recent Fuel Transactions",
+            type: "table",
+            data: {
+              head: [["Date", "Vehicle", "Liters", "Rate (KES)", "Total (KES)"]],
+              body: fuelData.logs.slice(0, 15).map(log => [
+                new Date(log.created_at).toLocaleDateString("en-KE"),
+                (log.vehicles as any)?.license_plate || "N/A",
+                `${Number(log.liters || 0).toFixed(1)} L`,
+                Number(log.price_per_liter_kes || 0).toLocaleString(),
+                Number(log.total_cost_kes || 0).toLocaleString(),
+              ]),
+            },
+          },
+          {
+            title: "Recent Maintenance Records",
+            type: "table",
+            data: {
+              head: [["Date", "Vehicle", "Service Type", "Cost (KES)"]],
+              body: maintenanceData.logs.slice(0, 15).map(log => [
+                new Date(log.date_performed).toLocaleDateString("en-KE"),
+                (log.vehicles as any)?.license_plate || "N/A",
+                log.service_type || "General",
+                Number(log.cost_kes || 0).toLocaleString(),
+              ]),
+            },
+          },
+          {
+            title: "Budget Recommendations",
+            type: "text",
+            data: totalExpenses > 0 
+              ? `Based on current expenditure patterns, fuel costs account for ${fuelPercentage}% of total operating expenses while maintenance accounts for ${maintenancePercentage}%. With ${vehicleCount} vehicles in the fleet, the average operational cost per vehicle is KES ${costPerVehicle.toLocaleString()}. Regular maintenance scheduling and fuel efficiency monitoring are recommended to optimize costs.`
+              : "No expense data available. Financial analysis will be generated as fuel and maintenance records are added to the system.",
+          },
+        ],
+      };
+
+      await generateFleetReport(reportData);
+      toast({ title: "Success", description: "Financial report downloaded successfully!" });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({ title: "Error", description: "Failed to generate report", variant: "destructive" });
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -181,6 +260,13 @@ const FinanceDashboard = () => {
             <p className="text-xs text-muted-foreground">{vehicleCount} vehicles in fleet</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleExportPDF} disabled={generating} className="gap-2">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+          {generating ? "Generating..." : "Export PDF Report"}
+        </Button>
       </div>
 
       <Card>

@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, DollarSign, Fuel, TrendingUp, Wrench, Users, Truck, MapPin, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BarChart3, DollarSign, Fuel, TrendingUp, Wrench, Users, Truck, MapPin, Clock, CheckCircle, FileDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area } from "recharts";
-
+import { generateFleetReport, ReportData } from "@/utils/pdfReportGenerator";
 interface RoutePerformance {
   route: string;
   ontime: number;
@@ -33,6 +34,10 @@ export const AnalyticsView = () => {
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [driverPerformance, setDriverPerformance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [rawData, setRawData] = useState<{ maintenance: any[]; fuel: any[]; vehicles: any[]; drivers: any[]; trips: any[] }>({
+    maintenance: [], fuel: [], vehicles: [], drivers: [], trips: []
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -42,13 +47,21 @@ export const AnalyticsView = () => {
   const fetchAnalytics = async () => {
     try {
       const [maintenance, fuel, vehicles, drivers, trips] = await Promise.all([
-        supabase.from("maintenance_logs").select("cost_kes, date_performed, service_type"),
-        supabase.from("fuel_logs").select("liters, price_per_liter_kes, created_at"),
-        supabase.from("vehicles").select("id, status"),
+        supabase.from("maintenance_logs").select("cost_kes, date_performed, service_type, vehicles(license_plate)"),
+        supabase.from("fuel_logs").select("liters, price_per_liter_kes, created_at, total_cost_kes, vehicles(license_plate)"),
+        supabase.from("vehicles").select("id, status, license_plate, vehicle_type"),
         supabase.from("drivers").select("id, performance_score, total_trips, profiles(full_name)"),
         supabase.from("trips").select("id, status, route, distance_km, start_time, end_time, estimated_duration_hours"),
       ]);
 
+      // Store raw data for PDF export
+      setRawData({
+        maintenance: maintenance.data || [],
+        fuel: fuel.data || [],
+        vehicles: vehicles.data || [],
+        drivers: drivers.data || [],
+        trips: trips.data || [],
+      });
       // Calculate stats
       const maintenanceCost = maintenance.data?.reduce((sum, log) => sum + Number(log.cost_kes), 0) || 0;
       const fuelCost = fuel.data?.reduce((sum, log) => sum + (Number(log.liters) * Number(log.price_per_liter_kes)), 0) || 0;
@@ -158,6 +171,105 @@ export const AnalyticsView = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    setGenerating(true);
+    try {
+      const totalOperatingCost = stats.totalMaintenanceCost + stats.totalFuelCost;
+      const fuelPercentage = totalOperatingCost > 0 ? Math.round((stats.totalFuelCost / totalOperatingCost) * 100) : 0;
+      const maintenancePercentage = totalOperatingCost > 0 ? Math.round((stats.totalMaintenanceCost / totalOperatingCost) * 100) : 0;
+
+      const reportData: ReportData = {
+        title: "Fleet Analytics Report",
+        generatedBy: "Fleet Management",
+        dateRange: "All Time Performance Data",
+        summary: [
+          { label: "Total Operating Cost", value: `KES ${totalOperatingCost.toLocaleString()}`, subtext: "Fuel + Maintenance" },
+          { label: "Fuel Consumption", value: `${stats.fuelConsumption.toLocaleString()} L`, subtext: `KES ${stats.totalFuelCost.toLocaleString()}` },
+          { label: "Maintenance Cost", value: `KES ${stats.totalMaintenanceCost.toLocaleString()}`, subtext: `${rawData.maintenance.length} services` },
+          { label: "Avg Driver Score", value: `${stats.avgPerformanceScore}%`, subtext: `${stats.driverCount} drivers` },
+          { label: "Fleet Size", value: `${stats.vehicleCount}`, subtext: "Active vehicles" },
+          { label: "Total Distance", value: `${stats.totalDistance.toLocaleString()} km`, subtext: "Cumulative" },
+          { label: "Completed Trips", value: `${stats.completedTrips}/${stats.tripCount}`, subtext: "Success rate" },
+          { label: "Cost/Vehicle", value: `KES ${stats.vehicleCount > 0 ? Math.round(totalOperatingCost / stats.vehicleCount).toLocaleString() : 0}`, subtext: "Average" },
+        ],
+        sections: [
+          {
+            title: "Cost Distribution Analysis",
+            type: "metrics",
+            data: [
+              { label: "Fuel Costs", value: `${fuelPercentage}% of total (KES ${stats.totalFuelCost.toLocaleString()})` },
+              { label: "Maintenance Costs", value: `${maintenancePercentage}% of total (KES ${stats.totalMaintenanceCost.toLocaleString()})` },
+              { label: "Average Fuel Cost/Entry", value: `KES ${rawData.fuel.length > 0 ? Math.round(stats.totalFuelCost / rawData.fuel.length).toLocaleString() : 0}` },
+              { label: "Average Maintenance Cost", value: `KES ${rawData.maintenance.length > 0 ? Math.round(stats.totalMaintenanceCost / rawData.maintenance.length).toLocaleString() : 0}` },
+            ],
+          },
+          {
+            title: "Fleet Vehicle Summary",
+            type: "table",
+            data: {
+              head: [["License Plate", "Type", "Status"]],
+              body: rawData.vehicles.slice(0, 20).map(v => [
+                v.license_plate || "N/A",
+                v.vehicle_type || "Unknown",
+                v.status || "Unknown",
+              ]),
+            },
+          },
+          {
+            title: "Driver Performance Rankings",
+            type: "table",
+            data: {
+              head: [["Driver Name", "Performance Score", "Total Trips"]],
+              body: driverPerformance.map(d => [
+                d.name,
+                `${d.score}%`,
+                d.trips.toString(),
+              ]),
+            },
+          },
+          {
+            title: "Route Performance",
+            type: "table",
+            data: {
+              head: [["Route", "On-Time Rate", "Total Trips"]],
+              body: routePerformance.map(r => [
+                r.route,
+                `${r.ontime}%`,
+                r.total.toString(),
+              ]),
+            },
+          },
+          {
+            title: "Monthly Cost Trend (Last 6 Months)",
+            type: "table",
+            data: {
+              head: [["Month", "Fuel Cost (KES)", "Maintenance Cost (KES)", "Total (KES)"]],
+              body: monthlyData.map(m => [
+                m.month,
+                m.fuel.toLocaleString(),
+                m.maintenance.toLocaleString(),
+                (m.fuel + m.maintenance).toLocaleString(),
+              ]),
+            },
+          },
+          {
+            title: "Strategic Insights",
+            type: "text",
+            data: `Fleet Performance Summary: With ${stats.vehicleCount} vehicles and ${stats.driverCount} drivers, the fleet has completed ${stats.completedTrips} out of ${stats.tripCount} trips, covering a total distance of ${stats.totalDistance.toLocaleString()} km. The average driver performance score of ${stats.avgPerformanceScore}% indicates ${stats.avgPerformanceScore >= 80 ? 'excellent' : stats.avgPerformanceScore >= 60 ? 'good' : 'room for improvement in'} operational efficiency. Total operating costs of KES ${totalOperatingCost.toLocaleString()} break down to ${fuelPercentage}% fuel and ${maintenancePercentage}% maintenance. Recommendations: ${fuelPercentage > 60 ? 'Focus on fuel efficiency programs and driver training.' : 'Continue current fuel management practices.'} ${maintenancePercentage > 50 ? 'Review preventive maintenance schedules to reduce reactive repairs.' : 'Maintenance costs are well-controlled.'}`,
+          },
+        ],
+      };
+
+      await generateFleetReport(reportData);
+      toast({ title: "Success", description: "Analytics report downloaded successfully!" });
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({ title: "Error", description: "Failed to generate report", variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => `KES ${amount.toLocaleString()}`;
   const totalOperatingCost = stats.totalMaintenanceCost + stats.totalFuelCost;
 
@@ -165,7 +277,6 @@ export const AnalyticsView = () => {
     { name: "Fuel", value: stats.totalFuelCost, color: "hsl(var(--warning))" },
     { name: "Maintenance", value: stats.totalMaintenanceCost, color: "hsl(var(--info))" },
   ];
-
   const vehicleStatusData = [
     { name: "Active", value: stats.vehicleCount, color: "hsl(var(--success))" },
     { name: "In Service", value: Math.max(0, Math.floor(stats.vehicleCount * 0.1)), color: "hsl(var(--warning))" },
@@ -177,7 +288,13 @@ export const AnalyticsView = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Analytics & Reports</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Analytics & Reports</h2>
+        <Button onClick={handleExportPDF} disabled={generating} className="gap-2">
+          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+          {generating ? "Generating..." : "Export PDF Report"}
+        </Button>
+      </div>
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
