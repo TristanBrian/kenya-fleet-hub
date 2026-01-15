@@ -226,7 +226,7 @@ The system follows a modular ITS architecture designed for developing country co
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <YOUR_GIT_URL>
+git clone https://github.com/TristanBrian/kenya-fleet-hub
 cd kenya-fleet-hub
 ```
 
