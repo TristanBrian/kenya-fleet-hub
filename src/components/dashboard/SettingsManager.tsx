@@ -39,6 +39,8 @@ const getStoredApiKeys = (): ApiKeys => {
 
 const setStoredApiKeys = (keys: ApiKeys) => {
   localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+  // Dispatch custom event so all consumers (map, analytics) update immediately
+  window.dispatchEvent(new Event('apikeys-updated'));
 };
 
 export const SettingsManager = () => {
@@ -126,11 +128,13 @@ export const SettingsManager = () => {
     setSavingKey('mapbox');
     try {
       localStorage.setItem('mapbox_token', token);
+      // Notify all consumers immediately
+      window.dispatchEvent(new Event('apikeys-updated'));
       setApiStatus(prev => ({
         ...prev,
         mapbox: { ...prev.mapbox, connected: true }
       }));
-      toast({ title: "Mafanikio!", description: "Mapbox token saved. Maps will now work across the application." });
+      toast({ title: "Mafanikio! ✅", description: "Mapbox token saved. Live tracking map is now active across all pages." });
     } catch (error) {
       toast({ title: "Error", description: "Failed to save token", variant: "destructive" });
     } finally {
@@ -141,6 +145,7 @@ export const SettingsManager = () => {
   const handleRemoveMapboxToken = () => {
     localStorage.removeItem('mapbox_token');
     setMapboxToken('');
+    window.dispatchEvent(new Event('apikeys-updated'));
     setApiStatus(prev => ({
       ...prev,
       mapbox: { ...prev.mapbox, connected: false }

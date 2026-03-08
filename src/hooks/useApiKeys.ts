@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const API_KEYS_STORAGE_KEY = 'safiri_api_keys';
 
@@ -12,23 +12,7 @@ export const useApiKeys = () => {
   const [apiKeys, setApiKeys] = useState<ApiKeys>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadKeys();
-    
-    // Listen for storage changes (when keys are updated in Settings)
-    const handleStorageChange = () => loadKeys();
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also poll for changes (for same-tab updates)
-    const interval = setInterval(loadKeys, 2000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
-
-  const loadKeys = () => {
+  const loadKeys = useCallback(() => {
     try {
       const stored = localStorage.getItem(API_KEYS_STORAGE_KEY);
       const mapboxToken = localStorage.getItem('mapbox_token') || '';
@@ -36,7 +20,7 @@ export const useApiKeys = () => {
       
       const keys: ApiKeys = stored ? JSON.parse(stored) : {};
       
-      // Add mapbox token from either env or localStorage
+      // Only use tokens that are valid public tokens (pk.)
       const validMapboxToken = envMapboxToken.startsWith('pk.') ? envMapboxToken : 
                                mapboxToken.startsWith('pk.') ? mapboxToken : '';
       if (validMapboxToken) {
@@ -49,7 +33,23 @@ export const useApiKeys = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadKeys();
+    
+    // Listen for cross-tab storage changes
+    const handleStorageChange = () => loadKeys();
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Listen for same-tab custom event from Settings page
+    window.addEventListener('apikeys-updated', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('apikeys-updated', handleStorageChange);
+    };
+  }, [loadKeys]);
 
   const getMapboxToken = (): string | null => {
     return apiKeys.mapbox || null;
