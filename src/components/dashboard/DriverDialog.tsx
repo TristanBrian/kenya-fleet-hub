@@ -23,7 +23,7 @@ interface Vehicle {
   vehicle_type: string;
 }
 
-export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDialogProps) => {
+export const DriverDialog = ({ open, onOpenChange, driver, onSuccess, preselectedVehicleId }: DriverDialogProps) => {
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
