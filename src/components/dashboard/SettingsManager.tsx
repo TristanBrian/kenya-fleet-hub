@@ -39,6 +39,8 @@ const getStoredApiKeys = (): ApiKeys => {
 
 const setStoredApiKeys = (keys: ApiKeys) => {
   localStorage.setItem(API_KEYS_STORAGE_KEY, JSON.stringify(keys));
+  // Dispatch custom event so all consumers (map, analytics) update immediately
+  window.dispatchEvent(new Event('apikeys-updated'));
 };
 
 export const SettingsManager = () => {
