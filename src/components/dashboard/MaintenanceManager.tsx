@@ -201,9 +201,14 @@ export const MaintenanceManager = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => { setSelectedLog(null); setDialogOpen(true); }}
+                      disabled={resubmitting === log.id}
+                      onClick={() => handleResubmit(log)}
                     >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      {resubmitting === log.id ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                      )}
                       Resubmit
                     </Button>
                   </div>
