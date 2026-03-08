@@ -13,9 +13,10 @@ interface MaintenanceDialogProps {
   onOpenChange: (open: boolean) => void;
   log: any;
   onSuccess: () => void;
+  isFinanceSubmission?: boolean;
 }
 
-export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: MaintenanceDialogProps) => {
+export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess, isFinanceSubmission = false }: MaintenanceDialogProps) => {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     vehicle_id: "",
@@ -43,8 +44,18 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
         next_due_date: log.next_due_date || "",
         performed_by: log.performed_by || "",
       });
+    } else {
+      setFormData({
+        vehicle_id: "",
+        service_type: "",
+        description: "",
+        date_performed: new Date().toISOString().split('T')[0],
+        cost_kes: "",
+        next_due_date: "",
+        performed_by: "",
+      });
     }
-  }, [log]);
+  }, [log, open]);
 
   const fetchVehicles = async () => {
     const { data } = await supabase.from("vehicles").select("id, license_plate");
@@ -54,23 +65,22 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
     if (!formData.vehicle_id) {
       toast({ title: "Error", description: "Please select a vehicle", variant: "destructive" });
       return;
     }
-    
     if (!formData.service_type.trim()) {
       toast({ title: "Error", description: "Service type is required", variant: "destructive" });
       return;
     }
-    
     if (!formData.cost_kes || parseFloat(formData.cost_kes) <= 0) {
       toast({ title: "Error", description: "Please enter a valid cost", variant: "destructive" });
       return;
     }
+
+    const { data: { session } } = await supabase.auth.getSession();
     
-    const payload = {
+    const payload: any = {
       vehicle_id: formData.vehicle_id,
       service_type: formData.service_type.trim(),
       description: formData.description?.trim() || null,
@@ -80,6 +90,18 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
       performed_by: formData.performed_by?.trim() || null,
     };
 
+    // Finance submissions start as pending
+    if (isFinanceSubmission) {
+      payload.approval_status = "pending";
+      payload.submitted_by = session?.user.id;
+    } else {
+      // Fleet manager/operations entries are auto-approved
+      payload.approval_status = "approved";
+      payload.submitted_by = session?.user.id;
+      payload.reviewed_by = session?.user.id;
+      payload.reviewed_at = new Date().toISOString();
+    }
+
     const { error } = log
       ? await supabase.from("maintenance_logs").update(payload).eq("id", log.id)
       : await supabase.from("maintenance_logs").insert([payload]);
@@ -88,7 +110,12 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
       console.error("Maintenance log save error:", error);
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Success", description: `Maintenance log ${log ? "updated" : "created"} successfully` });
+      toast({
+        title: isFinanceSubmission ? "Request Submitted" : "Success",
+        description: isFinanceSubmission
+          ? "Your maintenance request has been submitted for approval."
+          : `Maintenance log ${log ? "updated" : "created"} successfully`,
+      });
       onSuccess();
       onOpenChange(false);
     }
@@ -98,7 +125,9 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{log ? "Edit" : "Add"} Maintenance Log</DialogTitle>
+          <DialogTitle>
+            {log ? "Edit" : isFinanceSubmission ? "Submit Maintenance Request" : "Add"} Maintenance Log
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -118,28 +147,29 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
             <Label htmlFor="maintenance-service-type">Service Type</Label>
             <Input
               id="maintenance-service-type"
-              name="service_type"
               value={formData.service_type}
               onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+              placeholder={isFinanceSubmission ? "e.g. Brake Repair, Tyre Replacement" : ""}
               required
             />
           </div>
           <div>
-            <Label htmlFor="maintenance-description">Description</Label>
+            <Label htmlFor="maintenance-description">
+              {isFinanceSubmission ? "Justification / Details" : "Description"}
+            </Label>
             <Textarea
               id="maintenance-description"
-              name="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder={isFinanceSubmission ? "Describe why this maintenance is needed..." : ""}
               rows={3}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="maintenance-date">Date Performed</Label>
+              <Label htmlFor="maintenance-date">{isFinanceSubmission ? "Requested Date" : "Date Performed"}</Label>
               <Input
                 id="maintenance-date"
-                name="date_performed"
                 type="date"
                 value={formData.date_performed}
                 onChange={(e) => setFormData({ ...formData, date_performed: e.target.value })}
@@ -147,10 +177,9 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
               />
             </div>
             <div>
-              <Label htmlFor="maintenance-cost">Cost (KES)</Label>
+              <Label htmlFor="maintenance-cost">Estimated Cost (KES)</Label>
               <Input
                 id="maintenance-cost"
-                name="cost_kes"
                 type="number"
                 value={formData.cost_kes}
                 onChange={(e) => setFormData({ ...formData, cost_kes: e.target.value })}
@@ -158,30 +187,32 @@ export const MaintenanceDialog = ({ open, onOpenChange, log, onSuccess }: Mainte
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="maintenance-next-due">Next Due Date</Label>
-              <Input
-                id="maintenance-next-due"
-                name="next_due_date"
-                type="date"
-                value={formData.next_due_date}
-                onChange={(e) => setFormData({ ...formData, next_due_date: e.target.value })}
-              />
+          {!isFinanceSubmission && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="maintenance-next-due">Next Due Date</Label>
+                <Input
+                  id="maintenance-next-due"
+                  type="date"
+                  value={formData.next_due_date}
+                  onChange={(e) => setFormData({ ...formData, next_due_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="maintenance-performed-by">Performed By</Label>
+                <Input
+                  id="maintenance-performed-by"
+                  value={formData.performed_by}
+                  onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="maintenance-performed-by">Performed By</Label>
-              <Input
-                id="maintenance-performed-by"
-                name="performed_by"
-                value={formData.performed_by}
-                onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
-              />
-            </div>
-          </div>
+          )}
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit">
+              {isFinanceSubmission ? "Submit for Approval" : "Save"}
+            </Button>
           </div>
         </form>
       </DialogContent>
