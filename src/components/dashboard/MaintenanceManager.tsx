@@ -118,6 +118,7 @@ export const MaintenanceManager = () => {
   const handleResubmit = async (log: MaintenanceLog) => {
     setResubmitting(log.id);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const { error } = await supabase
         .from("maintenance_logs")
         .update({
@@ -125,6 +126,7 @@ export const MaintenanceManager = () => {
           reviewed_by: null,
           reviewed_at: null,
           rejection_reason: null,
+          submitted_by: session?.user.id,
         })
         .eq("id", log.id);
 
