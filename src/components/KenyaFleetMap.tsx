@@ -43,7 +43,6 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
   const [isConfigured, setIsConfigured] = useState(!!initialToken);
 
   useEffect(() => {
-    // Re-check localStorage for token changes (from Settings page)
     const checkToken = () => {
       const currentStoredToken = localStorage.getItem('mapbox_token') || '';
       const currentEnvToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
@@ -58,11 +57,16 @@ const KenyaFleetMap = ({ vehicles }: KenyaFleetMapProps) => {
       }
     };
 
-    // Check immediately and set up interval
     checkToken();
-    const interval = setInterval(checkToken, 1000);
     
-    return () => clearInterval(interval);
+    // Listen for Settings page saves (instant update)
+    window.addEventListener('apikeys-updated', checkToken);
+    window.addEventListener('storage', checkToken);
+    
+    return () => {
+      window.removeEventListener('apikeys-updated', checkToken);
+      window.removeEventListener('storage', checkToken);
+    };
   }, [mapboxToken]);
 
   useEffect(() => {
