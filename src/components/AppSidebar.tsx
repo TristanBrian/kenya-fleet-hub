@@ -59,6 +59,12 @@ export function AppSidebar() {
   const navItems = allNavItems.filter((item) => {
     if (!role) return false;
     return hasAnyRole(item.roles);
+  }).map((item) => {
+    // Use finance-specific title/icon if available and user is finance
+    if (role === "finance" && item.financeTitle) {
+      return { ...item, title: item.financeTitle, icon: item.financeIcon || item.icon };
+    }
+    return item;
   });
 
   return (
