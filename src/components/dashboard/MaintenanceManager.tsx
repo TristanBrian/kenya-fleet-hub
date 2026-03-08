@@ -36,6 +36,7 @@ export const MaintenanceManager = () => {
   const [reviewLog, setReviewLog] = useState<MaintenanceLog | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [resubmitting, setResubmitting] = useState<string | null>(null);
   const { toast } = useToast();
   const { isFinance, isFleetManager, isOperations } = useRole();
 
