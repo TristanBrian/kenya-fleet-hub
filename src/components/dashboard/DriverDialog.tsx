@@ -67,7 +67,7 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess, preselecte
       });
       setCredentials(null);
     }
-  }, [driver, open]);
+  }, [driver, open, preselectedVehicleId]);
 
   const fetchVehicles = async () => {
     const { data } = await supabase.from("vehicles").select("id, license_plate, vehicle_type").order("license_plate");
