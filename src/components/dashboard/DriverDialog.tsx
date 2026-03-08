@@ -14,6 +14,7 @@ interface DriverDialogProps {
   onOpenChange: (open: boolean) => void;
   driver: any;
   onSuccess: () => void;
+  preselectedVehicleId?: string | null;
 }
 
 interface Vehicle {
