@@ -115,6 +115,29 @@ export const MaintenanceManager = () => {
     setRejectionReason("");
   };
 
+  const handleResubmit = async (log: MaintenanceLog) => {
+    setResubmitting(log.id);
+    try {
+      const { error } = await supabase
+        .from("maintenance_logs")
+        .update({
+          approval_status: "pending",
+          reviewed_by: null,
+          reviewed_at: null,
+          rejection_reason: null,
+        })
+        .eq("id", log.id);
+
+      if (error) throw error;
+      toast({ title: "Resubmitted", description: `Request for ${log.vehicles?.license_plate} has been resubmitted for approval.` });
+      fetchLogs();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setResubmitting(null);
+    }
+  };
+
   const formatCurrency = (amount: number) => `KES ${amount.toLocaleString()}`;
   
   const pendingLogs = logs.filter(l => l.approval_status === "pending");
