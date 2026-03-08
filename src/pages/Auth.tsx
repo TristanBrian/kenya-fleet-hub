@@ -89,9 +89,8 @@ const Auth = () => {
 
   const testAccounts = [
     { icon: Settings, role: "Fleet Manager", email: "manager@safirismart.co.ke", password: "Manager2024!", desc: "Full system access", color: "text-primary", bg: "bg-primary/10", border: "border-l-primary" },
-    { icon: Users, role: "Operations", email: "operations@safirismart.co.ke", password: "Ops2024!", desc: "Vehicles & drivers", color: "text-blue-500", bg: "bg-blue-500/10", border: "border-l-blue-500" },
     { icon: UserCircle, role: "Driver", email: "john.kamau@safirismart.co.ke", password: "Driver2024!", desc: "Trips & vehicle view", color: "text-success", bg: "bg-success/10", border: "border-l-success" },
-    { icon: DollarSign, role: "Finance", email: "finance@safirismart.co.ke", password: "Finance2024!", desc: "Reports & analytics", color: "text-warning", bg: "bg-warning/10", border: "border-l-warning" },
+    { icon: DollarSign, role: "Finance", email: "finance@safirismart.co.ke", password: "Finance2024!", desc: "Financial management", color: "text-warning", bg: "bg-warning/10", border: "border-l-warning" },
   ];
 
   return (
