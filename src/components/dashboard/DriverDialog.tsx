@@ -61,7 +61,7 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess, preselecte
         email: "",
         mobile_phone: "",
         license_number: "",
-        vehicle_id: "",
+        vehicle_id: preselectedVehicleId || "",
         performance_score: "100",
         total_trips: "0",
       });
