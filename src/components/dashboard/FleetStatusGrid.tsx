@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Truck, MapPin, Clock, User, RefreshCw } from "lucide-react";
+import { Truck, MapPin, Clock, User, RefreshCw, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
+import { DriverDialog } from "./DriverDialog";
+import { useRole } from "@/hooks/useRole";
 
 interface VehicleWithDriver {
   id: string;
@@ -24,6 +26,11 @@ interface VehicleWithDriver {
 export const FleetStatusGrid = () => {
   const [vehicles, setVehicles] = useState<VehicleWithDriver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [driverDialogOpen, setDriverDialogOpen] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const { hasAnyRole } = useRole();
+
+  const canAssignDriver = hasAnyRole(["fleet_manager", "operations"]);
 
   useEffect(() => {
     fetchVehicles();
@@ -41,7 +48,6 @@ export const FleetStatusGrid = () => {
   const fetchVehicles = async () => {
     setLoading(true);
     
-    // Fetch vehicles with their assigned drivers and active trips
     const { data: vehiclesData } = await supabase
       .from("vehicles")
       .select("*")
@@ -60,7 +66,6 @@ export const FleetStatusGrid = () => {
       .select("*")
       .eq("status", "in_progress");
 
-    // Map drivers to vehicles
     const vehiclesWithDrivers = vehiclesData?.map(vehicle => {
       const driver = driversData?.find(d => d.vehicle_id === vehicle.id);
       const profile = driver ? profilesData?.find(p => p.id === driver.user_id) : null;
@@ -78,6 +83,16 @@ export const FleetStatusGrid = () => {
 
     setVehicles(vehiclesWithDrivers);
     setLoading(false);
+  };
+
+  const handleAssignDriver = (vehicleId: string) => {
+    setSelectedVehicleId(vehicleId);
+    setDriverDialogOpen(true);
+  };
+
+  const handleDriverCreated = () => {
+    fetchVehicles();
+    setSelectedVehicleId(null);
   };
 
   const getStatusBadge = (status: string) => {
@@ -111,65 +126,93 @@ export const FleetStatusGrid = () => {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2">
-          <Truck className="h-5 w-5 text-primary" />
-          Live Fleet Status
-        </CardTitle>
-        <Button variant="outline" size="sm" onClick={fetchVehicles} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Vehicle ID</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Next Stop / ETA</TableHead>
-                <TableHead>Driver</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {vehicles.length === 0 ? (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Truck className="h-5 w-5 text-primary" />
+            Live Fleet Status
+          </CardTitle>
+          <Button variant="outline" size="sm" onClick={fetchVehicles} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    {loading ? "Loading fleet data..." : "No vehicles found"}
-                  </TableCell>
+                  <TableHead>Vehicle ID</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Next Stop / ETA</TableHead>
+                  <TableHead>Driver</TableHead>
+                  {canAssignDriver && <TableHead className="text-right">Action</TableHead>}
                 </TableRow>
-              ) : (
-                vehicles.map((vehicle) => (
-                  <TableRow key={vehicle.id}>
-                    <TableCell>
-                      <div className="font-medium">{vehicle.license_plate}</div>
-                      <div className="text-xs text-muted-foreground">{vehicle.vehicle_type}</div>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
-                    <TableCell>{getLocationDisplay(vehicle)}</TableCell>
-                    <TableCell>
-                      <div className="text-sm">{vehicle.next_stop}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {vehicle.eta}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <User className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{vehicle.driver_name}</span>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {vehicles.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={canAssignDriver ? 6 : 5} className="text-center text-muted-foreground py-8">
+                      {loading ? "Loading fleet data..." : "No vehicles found"}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                ) : (
+                  vehicles.map((vehicle) => (
+                    <TableRow key={vehicle.id}>
+                      <TableCell>
+                        <div className="font-medium">{vehicle.license_plate}</div>
+                        <div className="text-xs text-muted-foreground">{vehicle.vehicle_type}</div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
+                      <TableCell>{getLocationDisplay(vehicle)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">{vehicle.next_stop}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {vehicle.eta}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                          <span className={`text-sm ${vehicle.driver_name === "Unassigned" ? "text-warning" : ""}`}>
+                            {vehicle.driver_name}
+                          </span>
+                        </div>
+                      </TableCell>
+                      {canAssignDriver && (
+                        <TableCell className="text-right">
+                          {vehicle.driver_name === "Unassigned" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAssignDriver(vehicle.id)}
+                              className="gap-1"
+                            >
+                              <UserPlus className="h-4 w-4" />
+                              Assign
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <DriverDialog
+        open={driverDialogOpen}
+        onOpenChange={setDriverDialogOpen}
+        driver={null}
+        onSuccess={handleDriverCreated}
+        preselectedVehicleId={selectedVehicleId}
+      />
+    </>
   );
 };

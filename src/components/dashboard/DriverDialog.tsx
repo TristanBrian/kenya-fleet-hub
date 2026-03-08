@@ -14,6 +14,7 @@ interface DriverDialogProps {
   onOpenChange: (open: boolean) => void;
   driver: any;
   onSuccess: () => void;
+  preselectedVehicleId?: string | null;
 }
 
 interface Vehicle {
@@ -22,7 +23,7 @@ interface Vehicle {
   vehicle_type: string;
 }
 
-export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDialogProps) => {
+export const DriverDialog = ({ open, onOpenChange, driver, onSuccess, preselectedVehicleId }: DriverDialogProps) => {
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -60,13 +61,13 @@ export const DriverDialog = ({ open, onOpenChange, driver, onSuccess }: DriverDi
         email: "",
         mobile_phone: "",
         license_number: "",
-        vehicle_id: "",
+        vehicle_id: preselectedVehicleId || "",
         performance_score: "100",
         total_trips: "0",
       });
       setCredentials(null);
     }
-  }, [driver, open]);
+  }, [driver, open, preselectedVehicleId]);
 
   const fetchVehicles = async () => {
     const { data } = await supabase.from("vehicles").select("id, license_plate, vehicle_type").order("license_plate");
