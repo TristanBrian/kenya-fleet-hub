@@ -153,6 +153,85 @@ export const MaintenanceManager = () => {
         )}
       </div>
 
+      {/* Rejected Requests Banner for Finance */}
+      {isFinance && rejectedLogs.length > 0 && (
+        <Card className="border-l-4 border-l-destructive bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-destructive" />
+              {rejectedLogs.length} Declined Request{rejectedLogs.length > 1 ? "s" : ""}
+            </CardTitle>
+            <CardDescription>These requests were declined by the Fleet Manager. Review the reasons and resubmit if needed.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {rejectedLogs.map((log) => (
+                <div key={log.id} className="p-3 rounded-lg border bg-background space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{log.service_type} — {log.vehicles?.license_plate || "N/A"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatCurrency(Number(log.cost_kes))} · {format(new Date(log.date_performed), "dd MMM yyyy")}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { setSelectedLog(null); setDialogOpen(true); }}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      Resubmit
+                    </Button>
+                  </div>
+                  {log.rejection_reason && (
+                    <div className="flex items-start gap-2 p-2 rounded-md bg-destructive/10 border border-destructive/20">
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-destructive">Reason for decline:</p>
+                        <p className="text-xs text-muted-foreground">{log.rejection_reason}</p>
+                      </div>
+                    </div>
+                  )}
+                  {log.reviewed_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Declined on {format(new Date(log.reviewed_at), "dd MMM yyyy 'at' HH:mm")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending Requests Banner for Finance */}
+      {isFinance && pendingLogs.length > 0 && (
+        <Card className="border-l-4 border-l-info bg-info/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-info" />
+              {pendingLogs.length} Awaiting Approval
+            </CardTitle>
+            <CardDescription>Your submitted requests are pending Fleet Manager review</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                  <div>
+                    <p className="text-sm font-medium">{log.service_type} — {log.vehicles?.license_plate || "N/A"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(Number(log.cost_kes))} · {format(new Date(log.date_performed), "dd MMM yyyy")}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" />Pending</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Pending Requests Banner for Fleet Managers */}
       {(isFleetManager || isOperations) && pendingLogs.length > 0 && (
         <Card className="border-l-4 border-l-warning bg-warning/5">
