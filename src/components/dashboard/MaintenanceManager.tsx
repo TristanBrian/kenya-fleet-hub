@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Wrench, Trash2, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Wrench, Trash2, CheckCircle, XCircle, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { MaintenanceDialog } from "./MaintenanceDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
@@ -36,6 +36,7 @@ export const MaintenanceManager = () => {
   const [reviewLog, setReviewLog] = useState<MaintenanceLog | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [resubmitting, setResubmitting] = useState<string | null>(null);
   const { toast } = useToast();
   const { isFinance, isFleetManager, isOperations } = useRole();
 
@@ -114,6 +115,29 @@ export const MaintenanceManager = () => {
     setRejectionReason("");
   };
 
+  const handleResubmit = async (log: MaintenanceLog) => {
+    setResubmitting(log.id);
+    try {
+      const { error } = await supabase
+        .from("maintenance_logs")
+        .update({
+          approval_status: "pending",
+          reviewed_by: null,
+          reviewed_at: null,
+          rejection_reason: null,
+        })
+        .eq("id", log.id);
+
+      if (error) throw error;
+      toast({ title: "Resubmitted", description: `Request for ${log.vehicles?.license_plate} has been resubmitted for approval.` });
+      fetchLogs();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setResubmitting(null);
+    }
+  };
+
   const formatCurrency = (amount: number) => `KES ${amount.toLocaleString()}`;
   
   const pendingLogs = logs.filter(l => l.approval_status === "pending");
@@ -177,9 +201,14 @@ export const MaintenanceManager = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => { setSelectedLog(null); setDialogOpen(true); }}
+                      disabled={resubmitting === log.id}
+                      onClick={() => handleResubmit(log)}
                     >
-                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      {resubmitting === log.id ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                      )}
                       Resubmit
                     </Button>
                   </div>
