@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Wrench, Trash2, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Wrench, Trash2, CheckCircle, XCircle, Clock, AlertTriangle, Loader2 } from "lucide-react";
 import { MaintenanceDialog } from "./MaintenanceDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRole } from "@/hooks/useRole";
