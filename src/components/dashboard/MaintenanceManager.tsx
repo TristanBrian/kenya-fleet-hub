@@ -145,10 +145,12 @@ export const MaintenanceManager = () => {
             {isFinance ? "Submit maintenance requests for approval" : `Approved Cost: ${formatCurrency(totalApprovedCost)}`}
           </p>
         </div>
-        <Button onClick={() => { setSelectedLog(null); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          {isFinance ? "Submit Request" : "Add Log"}
-        </Button>
+        {isFinance && (
+          <Button onClick={() => { setSelectedLog(null); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Submit Request
+          </Button>
+        )}
       </div>
 
       {/* Pending Requests Banner for Fleet Managers */}
