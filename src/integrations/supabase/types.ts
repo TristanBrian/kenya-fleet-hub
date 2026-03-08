@@ -211,6 +211,7 @@ export type Database = {
       }
       maintenance_logs: {
         Row: {
+          approval_status: string
           cost_kes: number
           created_at: string
           date_performed: string
@@ -218,10 +219,15 @@ export type Database = {
           id: string
           next_due_date: string | null
           performed_by: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           service_type: string
+          submitted_by: string | null
           vehicle_id: string
         }
         Insert: {
+          approval_status?: string
           cost_kes: number
           created_at?: string
           date_performed?: string
@@ -229,10 +235,15 @@ export type Database = {
           id?: string
           next_due_date?: string | null
           performed_by?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           service_type: string
+          submitted_by?: string | null
           vehicle_id: string
         }
         Update: {
+          approval_status?: string
           cost_kes?: number
           created_at?: string
           date_performed?: string
@@ -240,7 +251,11 @@ export type Database = {
           id?: string
           next_due_date?: string | null
           performed_by?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           service_type?: string
+          submitted_by?: string | null
           vehicle_id?: string
         }
         Relationships: [

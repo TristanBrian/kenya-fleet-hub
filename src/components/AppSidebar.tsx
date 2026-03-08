@@ -1,4 +1,4 @@
-import { Home, Truck, Users, MapPin, Wrench, BarChart3, Settings, LogOut } from "lucide-react";
+import { Home, Truck, Users, MapPin, Wrench, BarChart3, Settings, LogOut, ClipboardCheck } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,12 +23,14 @@ interface NavItem {
   title: string;
   url: string;
   icon: any;
-  roles: AppRole[]; // Roles that can access this item
+  roles: AppRole[];
+  financeTitle?: string; // Alternative title for finance role
+  financeIcon?: any;
 }
 
 const allNavItems: NavItem[] = [
   { title: "Dashboard", url: "/dashboard", icon: Home, roles: ["fleet_manager", "operations", "driver", "finance"] },
-  { title: "Vehicles", url: "/vehicles", icon: Truck, roles: ["fleet_manager", "operations", "finance"] },
+  { title: "Vehicles", url: "/vehicles", icon: Truck, roles: ["fleet_manager", "operations", "finance"], financeTitle: "Inventory", financeIcon: ClipboardCheck },
   { title: "Drivers", url: "/drivers", icon: Users, roles: ["fleet_manager", "operations"] },
   { title: "Live Tracking", url: "/live-tracking", icon: MapPin, roles: ["fleet_manager", "operations"] },
   { title: "Maintenance", url: "/maintenance", icon: Wrench, roles: ["fleet_manager", "operations", "finance"] },
@@ -57,6 +59,12 @@ export function AppSidebar() {
   const navItems = allNavItems.filter((item) => {
     if (!role) return false;
     return hasAnyRole(item.roles);
+  }).map((item) => {
+    // Use finance-specific title/icon if available and user is finance
+    if (role === "finance" && item.financeTitle) {
+      return { ...item, title: item.financeTitle, icon: item.financeIcon || item.icon };
+    }
+    return item;
   });
 
   return (
