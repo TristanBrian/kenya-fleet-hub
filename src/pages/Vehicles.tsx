@@ -1,25 +1,22 @@
 import { useNavigate } from "react-router-dom";
-import { VehiclesManager } from "@/components/dashboard/VehiclesManager";
 import { useRole } from "@/hooks/useRole";
+import { VehiclesManager } from "@/components/dashboard/VehiclesManager";
+import { InventoryCheck } from "@/components/dashboard/InventoryCheck";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldX } from "lucide-react";
 
 const Vehicles = () => {
   const navigate = useNavigate();
-  const { role, loading, hasAnyRole } = useRole();
+  const { role, loading, hasAnyRole, isFinance } = useRole();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
-  // Drivers can view vehicles (their assigned vehicle), but with limited access
-  // Finance can view but not edit
   if (!hasAnyRole(["fleet_manager", "operations", "driver", "finance"])) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -29,22 +26,21 @@ const Vehicles = () => {
               <ShieldX className="h-5 w-5" />
               Access Denied
             </CardTitle>
-            <CardDescription>You don't have permission to view vehicles</CardDescription>
+            <CardDescription>You don't have permission to view this page</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Vehicle management requires appropriate permissions.
-            </p>
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
-            >
+            <button onClick={() => navigate("/dashboard")} className="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">
               Go to Dashboard
             </button>
           </CardContent>
         </Card>
       </div>
     );
+  }
+
+  // Finance sees inventory check instead of vehicle management
+  if (isFinance) {
+    return <InventoryCheck />;
   }
 
   return <VehiclesManager />;
