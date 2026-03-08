@@ -145,6 +145,7 @@ export const SettingsManager = () => {
   const handleRemoveMapboxToken = () => {
     localStorage.removeItem('mapbox_token');
     setMapboxToken('');
+    window.dispatchEvent(new Event('apikeys-updated'));
     setApiStatus(prev => ({
       ...prev,
       mapbox: { ...prev.mapbox, connected: false }
